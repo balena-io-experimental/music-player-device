@@ -29,7 +29,7 @@ twitter.stream('user', {}, (timeline) ->
 				when 1
 					[song_name] = tweet_parts
 				else
-					[song_name, artist_name] = tweet_parts
+					[artist_name, song_name] = tweet_parts
 
 			tweet_time = new Date(tweet.created_at).getTime() # UNIX Timestamp
 			console.log("'#{tweet.text}': Created at '#{tweet_time}'.")
@@ -40,9 +40,9 @@ twitter.stream('user', {}, (timeline) ->
 				start_time: tweet_time + delay # Playing delayed te allow all devices to sync
 			console.log(song)
 
-			console.log("'#{song.name} - #{song.artist}': Adding to queue.")
+			console.log("'#{song.artist} - #{song.name}': Adding to queue.")
 			Music.queue.push(song) # Pushing the name and when to start playing
-			console.log("'#{song.name} - #{song.artist}': Added to queue.")
+			console.log("'#{song.artist} - #{song.name}': Added to queue.")
 			Music.play() # Start playing the queue or do nothing if already playing
 	)
 )
