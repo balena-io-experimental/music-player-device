@@ -22,9 +22,8 @@ watchTwitter = ->
 			console.log("'#{tweet.text}': Got tweet.")
 			# tweet.text syntax shoud be: #music-player song_name artist_name
 			if /music-player/.test(tweet.text)
-				tweet_parts = tweet.text.split(' ') # Splitting the tweet
-				tweet_parts.shift() # Removing #music-player
-				tweet_parts = tweet_parts.join(' ').split(' - ')
+				tweet_parts = tweet.text.replace(/^.*music-player\s*/, '') # Removing #music-player
+				tweet_parts = tweet_parts.split(' - ')
 
 				switch tweet_parts.length
 					when 1
