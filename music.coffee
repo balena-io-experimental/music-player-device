@@ -14,11 +14,11 @@ Music =
 				console.log("'#{song_name}': SongID not found.")
 				callback(true, null)
 				return
-			console.log("'#{song_name}': Got SongID #{info.SongID}")
+			console.log("'#{song_name}': Got SongID '#{info.SongID}'.")
 
 			console.log("'#{song_name}': Getting stream_url.")
 			GS.Grooveshark.getStreamingUrl(info.SongID, (err, stream_url) =>
-				console.log("'#{song_name}': Got stream_url #{stream_url}")
+				console.log("'#{song_name}': Got stream_url '#{stream_url}.'")
 				callback(err, stream_url)
 			)
 		)
@@ -31,14 +31,14 @@ Music =
 		console.log("Music.play(): Can play.")
 
 		@now_playing = true
-		song_name = @queue.shift() # Getting the next song_name
-		console.log("Music.play(): Got song_name #{song_name}")
+		song = @queue.shift() # Getting the next song_name
+		console.log("Music.play(): Got song.name '#{song.name}' and song.start_time '#{song.start_time}'.")
 
-		@getStream(song_name, (err, stream_url) =>
+		@getStream(song.name, (err, stream_url) =>
 			if err # Could not fetch stream_url
-				console.log("#{song_name}: Setting now_playing false.")
+				console.log("#{song.name}: Setting now_playing false.")
 				@now_playing = false
-				console.log("#{song_name}: Set now_playing false.")
+				console.log("#{song.name}: Set now_playing false.")
 				return
 
 			request = Http.get(stream_url) # Getting stream data
@@ -47,23 +47,24 @@ Music =
 
 			request.on('close', => # Stream data have been downloaded
 				@now_playing = false
-				console.log("'#{song_name}': Closing stream.")
+				console.log("'#{song.name}': Closing stream.")
 				stream.end()
-				console.log("'#{song_name}': Closed stream.")
+				console.log("'#{song.name}': Closed stream.")
 				@play()
 			)
-			request.on('response', (music) => # Downloading stream data
-				console.log("'#{song_name}': Piping to decoder.")
-				stream = music.pipe(decoder)
-				console.log("'#{song_name}': Piped to decoder.")
+			request.on('response', (stream_data) => # Downloading stream data
+				console.log("'#{song.name}': Piping to decoder.")
+				stream = stream_data.pipe(decoder)
+				console.log("'#{song.name}': Piped to decoder.")
 
 				stream.on('format', (format) =>
-					console.log("'#{song_name}': Waiting 10s to sync with all devices.")
+					wait = song.start_time - new Date().getTime() # Milliseconds
+					console.log("'#{song.name}': Waiting #{wait}s to sync with all devices.")
 					setTimeout(=>
-						console.log("'#{song_name}': Piping to speaker.")
+						console.log("'#{song.name}': Piping to speaker.")
 						stream.pipe(new Speaker(format)) # Playing music
-						console.log("'#{song_name}': Piped to speaker.")
-					, 10000)
+						console.log("'#{song.name}': Piped to speaker.")
+					, wait)
 				)
 			)
 		)
