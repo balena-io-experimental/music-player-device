@@ -39,6 +39,8 @@ commands =
 		console.log("'#{song.artist} - #{song.name}': Added to queue.")
 		Music.play() # Start playing the queue or do nothing if already playing
 
+	skip: ->
+		Music.skip()
 
 # Getting the user timeline
 watchTwitter = ->

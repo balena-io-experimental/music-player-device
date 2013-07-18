@@ -6,6 +6,7 @@ GS = require('grooveshark-streaming')
 Music =
 	queue: []
 	now_playing: false
+	speaker: null
 	log: (args...) ->
 		prefix =
 			if @now_playing
@@ -29,6 +30,11 @@ Music =
 				callback(err, stream_url)
 			)
 		)
+
+	skip: ->
+		@log('Skipping')
+		if @speaker
+			@speaker.close()
 
 	play: ->
 		console.log("Music.play(): Checking if playing now or no song in queue.")
@@ -68,10 +74,11 @@ Music =
 
 					setTimeout(=>
 						@log("Piping to speaker.")
-						speaker = stream.pipe(new Speaker(format)) # Playing music
+						@speaker = new Speaker(format)
+						stream.pipe(@speaker) # Playing music
 						@log("Piped to speaker.")
 
-						speaker.on('close', =>
+						@speaker.on('close', =>
 							@log("Song finished.")
 							@now_playing = false
 							@log("Closing stream.")
