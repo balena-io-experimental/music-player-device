@@ -75,7 +75,7 @@ Music =
 							@log("Song finished.")
 							@now_playing = false
 							@log("Closing stream.")
-							steam.end()
+							stream.end()
 							@log("Closed stream.")
 							@play()
 						)
