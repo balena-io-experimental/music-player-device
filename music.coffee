@@ -6,19 +6,26 @@ GS = require('grooveshark-streaming')
 Music =
 	queue: []
 	now_playing: false
+	log: (args...) ->
+		prefix =
+			if @now_playing
+				"'#{@now_playing.artist} - #{@now_playing.name}':"
+			else
+				"No Song Playing: "
+		console.log(prefix, args...)
 
 	getStream: (song, callback) -> # Searching for song_name on Grooveshark
-		console.log("'#{song.artist} - #{song.name}': Getting info.")
+		@log("Getting info.")
 		GS.Tinysong.getSongInfo(song.name, song.artist, (err, info) => # Getting SongID
 			if info is null # Not found
-				console.log("'#{song.artist} - #{song.name}': Not found.")
+				@log("Not found.")
 				callback(true, null)
 				return
-			console.log("'#{song.artist} - #{song.name}': Got info", info)
+			@log("Got info", info)
 
-			console.log("'#{song.artist} - #{song.name}': Getting stream_url.")
+			@log("Getting stream_url.")
 			GS.Grooveshark.getStreamingUrl(info.SongID, (err, stream_url) =>
-				console.log("'#{song.artist} - #{song.name}': Got stream_url '#{stream_url}.'")
+				@log("Got stream_url '#{stream_url}.'")
 				callback(err, stream_url)
 			)
 		)
@@ -30,15 +37,14 @@ Music =
 			return
 		console.log("Music.play(): Can play.")
 
-		@now_playing = true
-		song = @queue.shift() # Getting the next song_name
+		@now_playing = song = @queue.shift() # Getting the next song_name
 		console.log("Music.play(): Got", song)
 
 		@getStream(song, (err, stream_url) =>
 			if err # Could not fetch stream_url
-				console.log("#{song.artist} - #{song.name}: Setting now_playing false.")
+				@log("Setting now_playing false.")
 				@now_playing = false
-				console.log("#{song.artist} - #{song.name}: Set now_playing false.")
+				@log("Set now_playing false.")
 				return
 
 			request = Http.get(stream_url) # Getting stream data
@@ -46,31 +52,31 @@ Music =
 			stream = null
 
 			request.on('response', (stream_data) => # Downloading stream data
-				console.log("'#{song.artist} - #{song.name}': Piping to decoder.")
+				@log("Piping to decoder.")
 				stream = stream_data.pipe(decoder)
-				console.log("'#{song.artist} - #{song.name}': Piped to decoder.")
+				@log("Piped to decoder.")
 
 				stream.on('format', (format) =>
-					interval = setInterval(->
+					interval = setInterval(=>
 						time_remaining = song.start_time - Date.now()
 						if time_remaining < 0
-							console.log("'#{song.artist} - #{song.name}': Should be playing now.")
+							@log("Should be playing now.")
 							clearInterval(interval)
 						else
-							console.log("'#{song.artist} - #{song.name}': Waiting #{time_remaining / 1000}s to sync with all devices.")
+							@log("Waiting #{time_remaining / 1000}s to sync with all devices.")
 					, 1000)
 
 					setTimeout(=>
-						console.log("'#{song.artist} - #{song.name}': Piping to speaker.")
+						@log("Piping to speaker.")
 						speaker = stream.pipe(new Speaker(format)) # Playing music
-						console.log("'#{song.artist} - #{song.name}': Piped to speaker.")
+						@log("Piped to speaker.")
 
 						speaker.on('close', =>
-							console.log("'#{song.artist} - #{song.name}': Song finished.")
+							@log("Song finished.")
 							@now_playing = false
-							console.log("'#{song.artist} - #{song.name}': Closing stream.")
+							@log("Closing stream.")
 							steam.end()
-							console.log("'#{song.artist} - #{song.name}': Closed stream.")
+							@log("Closed stream.")
 							@play()
 						)
 					, song.start_time - Date.now())
