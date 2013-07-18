@@ -23,12 +23,20 @@ twitter.stream('user', {}, (timeline) ->
 		if /music-player/.test(tweet.text)
 			tweet_parts = tweet.text.split(' ') # Splitting the tweet
 			tweet_parts.shift() # Removing #music-player
+			tweet_parts = tweet_parts.join(' ').split(' - ')
+
+			switch tweet_parts.length
+				when 1
+					[song_name] = tweet_parts
+				else
+					[artist_name, song_name] = tweet_parts
 
 			tweet_time = new Date(tweet.created_at).getTime() / 1000 # UNIX Timestamp
 			console.log("'#{tweet.text}': Created at '#{tweet_time}'.")
 			delay = 20 # Seconds
 			song =
-				name: tweet_parts.join(' ') # Joining song_name and artist_name. Currently song_name and artist_name is the same thing
+				name: song_name
+				artist: artist_name ? ''
 				start_time: (tweet_time + delay) * 1000 # Playing delayed to allow all devices to sync
 			console.log(song)
 

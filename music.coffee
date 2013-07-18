@@ -7,18 +7,20 @@ Music =
 	queue: []
 	now_playing: false
 
-	getStream: (song_name, callback) -> # Searching for song_name on Grooveshark
-		console.log("'#{song_name}': Getting SongID.")
-		GS.Tinysong.getSongInfo(song_name, '', (err, info) => # Second param for artist_name but it is not separated from song_name yet
+	getStream: (song, callback) -> # Searching for song_name on Grooveshark
+		log = (args...) ->
+			console.log("'#{song.artist}' - '#{song.name}':", args)
+		log("Getting SongID.")
+		GS.Tinysong.getSongInfo(song.name, song.artist, (err, info) => # Second param for artist_name but it is not separated from song.name yet
 			if info is null # Not found
-				console.log("'#{song_name}': SongID not found.")
+				log("SongID not found.")
 				callback(true, null)
 				return
-			console.log("'#{song_name}': Got SongID '#{info.SongID}'.")
+			log("Got SongID '#{info.SongID}'.")
 
-			console.log("'#{song_name}': Getting stream_url.")
+			log("Getting stream_url.")
 			GS.Grooveshark.getStreamingUrl(info.SongID, (err, stream_url) =>
-				console.log("'#{song_name}': Got stream_url '#{stream_url}.'")
+				log("Got stream_url '#{stream_url}.'")
 				callback(err, stream_url)
 			)
 		)
@@ -32,9 +34,9 @@ Music =
 
 		@now_playing = true
 		song = @queue.shift() # Getting the next song_name
-		console.log("Music.play(): Got song.name '#{song.name}' and song.start_time '#{song.start_time}'.")
+		console.log("Music.play(): Got song.artist '#{song.artist}', song.name '#{song.name}' and song.start_time '#{song.start_time}'.")
 
-		@getStream(song.name, (err, stream_url) =>
+		@getStream(song, (err, stream_url) =>
 			if err # Could not fetch stream_url
 				console.log("#{song.name}: Setting now_playing false.")
 				@now_playing = false
