@@ -13,6 +13,33 @@ twitter = new Twitter(
 	access_token_secret: '2u21AcQl0DeSPGjV0l2UukwHz4pT3wdhPlZhMCO9o'
 )
 
+commands = 
+	play: (tweet_text, tweet_time) ->
+	
+		tweet_parts = tweet_text.split(' - ')
+
+		tweet_parts = tweet_parts.map((s) -> s.trim())
+
+		switch tweet_parts.length
+			when 1
+				[song_name] = tweet_parts
+			else
+				[artist_name, song_name] = tweet_parts
+
+		console.log("'#{tweet_text}': Created at '#{tweet_time}'.")
+		delay = 10000 # ms
+		song =
+			name: song_name
+			artist: artist_name ? ''
+			start_time: tweet_time + delay # Playing delayed te allow all devices to sync
+		console.log(song)
+
+		console.log("'#{song.artist} - #{song.name}': Adding to queue.")
+		Music.queue.push(song) # Pushing the name and when to start playing
+		console.log("'#{song.artist} - #{song.name}': Added to queue.")
+		Music.play() # Start playing the queue or do nothing if already playing
+
+
 # Getting the user timeline
 watchTwitter = ->
 	twitter.stream('user', {}, (timeline) ->
@@ -22,30 +49,15 @@ watchTwitter = ->
 			console.log("'#{tweet.text}': Got tweet.")
 			# tweet.text syntax shoud be: #music-player song_name artist_name
 			if /music-player/.test(tweet.text)
-				tweet_parts = tweet.text.replace(/^.*music-player/, '') # Removing #music-player
-				tweet_parts = tweet_parts.split(' - ')
+				tweet_text = tweet.text.replace(/^.*music-player-?/, '').trim() # Removing #music-player
+				tweet_parts = tweet_text.split(' ')
+				command = tweet_parts.shift().toLowerCase()
+				tweet_text = tweet_parts.join(' ')
 
-				tweet_parts = tweet_parts.map((s) -> s.trim())
-
-				switch tweet_parts.length
-					when 1
-						[song_name] = tweet_parts
-					else
-						[artist_name, song_name] = tweet_parts
-
-				tweet_time = new Date(tweet.created_at).getTime() # UNIX Timestamp
-				console.log("'#{tweet.text}': Created at '#{tweet_time}'.")
-				delay = 10000 # ms
-				song =
-					name: song_name
-					artist: artist_name ? ''
-					start_time: tweet_time + delay # Playing delayed te allow all devices to sync
-				console.log(song)
-
-				console.log("'#{song.artist} - #{song.name}': Adding to queue.")
-				Music.queue.push(song) # Pushing the name and when to start playing
-				console.log("'#{song.artist} - #{song.name}': Added to queue.")
-				Music.play() # Start playing the queue or do nothing if already playing
+				if commands.hasOwnProperty(command)
+					commands[command](tweet_text, new Date(tweet.created_at).getTime())
+				else
+					console.error("Unknown command: #{command}")
 		)
 
 		rewatched = false
