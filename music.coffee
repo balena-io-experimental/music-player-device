@@ -8,13 +8,13 @@ Music =
 	now_playing: false
 
 	getStream: (song, callback) -> # Searching for song_name on Grooveshark
-		console.log("'#{song.artist} - #{song.name}': Getting SongID.")
+		console.log("'#{song.artist} - #{song.name}': Getting info.")
 		GS.Tinysong.getSongInfo(song.name, song.artist, (err, info) => # Getting SongID
 			if info is null # Not found
-				console.log("'#{song.artist} - #{song.name}': SongID not found.")
+				console.log("'#{song.artist} - #{song.name}': Not found.")
 				callback(true, null)
 				return
-			console.log("'#{song.artist} - #{song.name}': Got SongID '#{info.SongID}'.")
+			console.log("'#{song.artist} - #{song.name}': Got info", info)
 
 			console.log("'#{song.artist} - #{song.name}': Getting stream_url.")
 			GS.Grooveshark.getStreamingUrl(info.SongID, (err, stream_url) =>
@@ -45,13 +45,6 @@ Music =
 			decoder = new Lame.Decoder()
 			stream = null
 
-			request.on('close', => # Stream data have been downloaded
-				@now_playing = false
-				console.log("'#{song.artist} - #{song.name}': Closing stream.")
-				stream.end()
-				console.log("'#{song.artist} - #{song.name}': Closed stream.")
-				@play()
-			)
 			request.on('response', (stream_data) => # Downloading stream data
 				console.log("'#{song.artist} - #{song.name}': Piping to decoder.")
 				stream = stream_data.pipe(decoder)
@@ -69,8 +62,17 @@ Music =
 
 					setTimeout(=>
 						console.log("'#{song.artist} - #{song.name}': Piping to speaker.")
-						stream.pipe(new Speaker(format)) # Playing music
+						speaker = stream.pipe(new Speaker(format)) # Playing music
 						console.log("'#{song.artist} - #{song.name}': Piped to speaker.")
+
+						speaker.on('close', =>
+							console.log("'#{song.artist} - #{song.name}': Song finished.")
+							@now_playing = false
+							console.log("'#{song.artist} - #{song.name}': Closing stream.")
+							steam.end()
+							console.log("'#{song.artist} - #{song.name}': Closed stream.")
+							@play()
+						)
 					, song.start_time - Date.now())
 				)
 			)
