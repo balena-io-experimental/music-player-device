@@ -14,35 +14,49 @@ twitter = new Twitter(
 )
 
 # Getting the user timeline
-twitter.stream('user', {}, (timeline) ->
-	timeline.on('data', (tweet) ->
-		return if tweet.text is undefined # Not a tweet
+watchTwitter = ->
+	twitter.stream('user', {}, (timeline) ->
+		timeline.on('data', (tweet) ->
+			return if tweet.text is undefined # Not a tweet
 
-		console.log("'#{tweet.text}': Got tweet.")
-		# tweet.text syntax shoud be: #music-player song_name artist_name
-		if /music-player/.test(tweet.text)
-			tweet_parts = tweet.text.split(' ') # Splitting the tweet
-			tweet_parts.shift() # Removing #music-player
-			tweet_parts = tweet_parts.join(' ').split(' - ')
+			console.log("'#{tweet.text}': Got tweet.")
+			# tweet.text syntax shoud be: #music-player song_name artist_name
+			if /music-player/.test(tweet.text)
+				tweet_parts = tweet.text.split(' ') # Splitting the tweet
+				tweet_parts.shift() # Removing #music-player
+				tweet_parts = tweet_parts.join(' ').split(' - ')
 
-			switch tweet_parts.length
-				when 1
-					[song_name] = tweet_parts
-				else
-					[artist_name, song_name] = tweet_parts
+				switch tweet_parts.length
+					when 1
+						[song_name] = tweet_parts
+					else
+						[artist_name, song_name] = tweet_parts
 
-			tweet_time = new Date(tweet.created_at).getTime() # UNIX Timestamp
-			console.log("'#{tweet.text}': Created at '#{tweet_time}'.")
-			delay = 10000 # ms
-			song =
-				name: song_name
-				artist: artist_name ? ''
-				start_time: tweet_time + delay # Playing delayed te allow all devices to sync
-			console.log(song)
+				tweet_time = new Date(tweet.created_at).getTime() # UNIX Timestamp
+				console.log("'#{tweet.text}': Created at '#{tweet_time}'.")
+				delay = 10000 # ms
+				song =
+					name: song_name
+					artist: artist_name ? ''
+					start_time: tweet_time + delay # Playing delayed te allow all devices to sync
+				console.log(song)
 
-			console.log("'#{song.artist} - #{song.name}': Adding to queue.")
-			Music.queue.push(song) # Pushing the name and when to start playing
-			console.log("'#{song.artist} - #{song.name}': Added to queue.")
-			Music.play() # Start playing the queue or do nothing if already playing
+				console.log("'#{song.artist} - #{song.name}': Adding to queue.")
+				Music.queue.push(song) # Pushing the name and when to start playing
+				console.log("'#{song.artist} - #{song.name}': Added to queue.")
+				Music.play() # Start playing the queue or do nothing if already playing
+		)
+
+		rewatched = false
+		rewatch = (args...) ->
+			console.log('Trying to rewatch:', rewatched, args)
+			if rewatched
+				return
+			rewatched = true
+			watchTwitter()
+		# Handle a disconnection
+		timeline.on('end', rewatch)
+		# Handle a 'silent' disconnection from Twitter, no end/error event fired
+		timeline.on('destroy', rewatch)
 	)
-)
+watchTwitter()
