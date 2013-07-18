@@ -12,6 +12,7 @@ Music =
 		GS.Tinysong.getSongInfo(song_name, '', (err, info) => # Second param for artist_name but it is not separated from song_name yet
 			if info is null # Not found
 				console.log("'#{song_name}': SongID not found.")
+				callback(true, null)
 				return
 			console.log("'#{song_name}': Got SongID #{info.SongID}")
 
@@ -34,6 +35,12 @@ Music =
 		console.log("Music.play(): Got song_name #{song_name}")
 
 		@getStream(song_name, (err, stream_url) =>
+			if err # Could not fetch stream_url
+				console.log("#{song_name}: Setting now_playing false.")
+				@now_playing = false
+				console.log("#{song_name}: Set now_playing false.")
+				return
+
 			request = Http.get(stream_url) # Getting stream data
 			decoder = new Lame.Decoder()
 			stream = null

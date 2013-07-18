@@ -1,10 +1,10 @@
 {
   "name": "music-player",
-  "version": "0.0.2",
-  "description": "Playing streamed video from Grooveshark.",
+  "version": "0.1.0",
   "dependencies": {
     "grooveshark-streaming": "~0.0.3",
     "lame": "~1.0.2",
+		"ntwitter": "~0.5.0",
     "speaker": "~0.0.10"
   },
   "devDependencies": {
