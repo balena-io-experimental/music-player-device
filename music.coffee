@@ -60,11 +60,13 @@ Music =
 				stream.on('format', (format) =>
 					wait = song.start_time - Date.now() # Milliseconds
 
-					wait_interval = Math.round(wait / 1000)
-					console.log(Date.now(), song.start_time, wait, wait_interval)
-					setInterval(=>
-						console.log("'#{song.name}': Waiting #{wait_interval}s to sync with all devices.")
-						wait_interval -= 1
+					interval = setInterval(->
+						time_remaining = song.start_time - Date.now()
+						if time_remaining < 0
+							console.log("'#{song.name}': should be playing now.")
+							clearInterval(interval)
+						else
+							console.log("'#{song.name}': Waiting #{time_remaining / 1000}s to sync with all devices.")
 					, 1000)
 
 					setTimeout(=>
