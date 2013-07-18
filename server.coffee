@@ -58,5 +58,7 @@ watchTwitter = ->
 		timeline.on('end', rewatch)
 		# Handle a 'silent' disconnection from Twitter, no end/error event fired
 		timeline.on('destroy', rewatch)
+		# Handle an error
+		timeline.on('error', rewatch)
 	)
 watchTwitter()
