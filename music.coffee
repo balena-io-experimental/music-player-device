@@ -58,22 +58,20 @@ Music =
 				console.log("'#{song.artist} - #{song.name}': Piped to decoder.")
 
 				stream.on('format', (format) =>
-					wait = song.start_time - Date.now() # Milliseconds
-
 					interval = setInterval(->
 						time_remaining = song.start_time - Date.now()
 						if time_remaining < 0
-							console.log("'#{song.name}': should be playing now.")
+							console.log("'#{song.artist} - #{song.name}': Should be playing now.")
 							clearInterval(interval)
 						else
-							console.log("'#{song.name}': Waiting #{time_remaining / 1000}s to sync with all devices.")
+							console.log("'#{song.artist} - #{song.name}': Waiting #{time_remaining / 1000}s to sync with all devices.")
 					, 1000)
 
 					setTimeout(=>
 						console.log("'#{song.artist} - #{song.name}': Piping to speaker.")
 						stream.pipe(new Speaker(format)) # Playing music
 						console.log("'#{song.artist} - #{song.name}': Piped to speaker.")
-					, wait)
+					, song.start_time - Date.now())
 				)
 			)
 		)
