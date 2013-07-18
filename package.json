@@ -1,11 +1,13 @@
 {
   "name": "music-player",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Playing streamed video from Grooveshark.",
-  "main": "server.js",
   "dependencies": {
     "grooveshark-streaming": "~0.0.3",
     "lame": "~1.0.2",
     "speaker": "~0.0.10"
+  },
+  "devDependencies": {
+    "coffee-script": "~1.6.3"
   }
 }

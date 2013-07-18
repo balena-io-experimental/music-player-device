@@ -1,1 +1,1 @@
-worker: node server.js
+worker: ./node_modules/coffee-script/bin/coffee server.coffee
