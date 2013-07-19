@@ -6,8 +6,7 @@
     "lame": "~1.0.2",
     "ntwitter": "~0.5.0",
     "speaker": "~0.0.10",
-    "request": "~2.22.0",
-    "gauss": "~0.2.8"
+    "request": "~2.22.0"
   },
   "devDependencies": {
     "coffee-script": "~1.6.3"
