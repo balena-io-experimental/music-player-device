@@ -3,11 +3,12 @@ Speaker = require('speaker')
 {EventEmitter2} = require('eventemitter2')
 
 class Player extends EventEmitter2
-	constructor: (@song) -> super()
+	constructor: (@song) ->
+		super()
+		@decoder = new Lame.Decoder()
+		@speaker = null
+		@ready = false
 	log: (args...) -> console.log("'#{@song.artist} - #{@song.name}':", args...)
-	ready: false
-	speaker: null
-	decoder: new Lame.Decoder()
 	buffer: (songStream) ->
 		@log("Piping to decoder.")
 		songStream.pipe(@decoder)
