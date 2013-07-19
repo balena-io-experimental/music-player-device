@@ -73,6 +73,15 @@ Music =
 					, 1000)
 
 					@speaker = new Speaker(format)
+					@speaker.on('close', =>
+						@log("Song finished.")
+						@now_playing = false
+						@log("Closing stream.")
+						stream.end()
+						@log("Closed stream.")
+						@play()
+					)
+
 					# Use a setTimeout to idle until 500ms before the planned start time.
 					setTimeout(=>
 						# Busy wait to be as accurate as possible to the start time.
@@ -81,15 +90,6 @@ Music =
 						@log("Piping to speaker.")
 						stream.pipe(@speaker) # Playing music
 						@log("Piped to speaker.")
-
-						@speaker.on('close', =>
-							@log("Song finished.")
-							@now_playing = false
-							@log("Closing stream.")
-							stream.end()
-							@log("Closed stream.")
-							@play()
-						)
 					, (song.start_time - 500) - Date.now())
 				)
 			)
