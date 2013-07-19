@@ -15,16 +15,23 @@ class Playlist extends Array
 	getStream: (song, callback) -> # Searching for song_name on Grooveshark
 		@log("Getting info.")
 		GS.Tinysong.getSongInfo(song.name, song.artist, (err, info) => # Getting SongID
-			if info is null # Not found
+			if err or !info? # Not found
 				@log("Not found.")
-				callback(true, null)
+				callback(err)
 				return
 			@log("Got info", info)
 
 			@log("Getting stream_url.")
 			GS.Grooveshark.getStreamingUrl(info.SongID, (err, stream_url) =>
 				@log("Got stream_url '#{stream_url}.'")
-				callback(err, stream_url)
+				if err # Could not fetch stream_url
+					@log("Error getting stream url.", err)
+					callback(err)
+					return
+
+				request = Http.get(stream_url) # Getting stream data
+				request.on('response', (songStream) -> callback(null, songStream, request))
+				request.on('error', callback)
 			)
 		)
 
@@ -48,33 +55,33 @@ class Playlist extends Array
 		)
 		console.log("Music.play(): Got", song)
 
-		@getStream(song, (err, stream_url) =>
-			if err # Could not fetch stream_url
-				@log("Error getting stream url.", err)
+		@getStream(song, (err, songStream, request) =>
+			if err
 				@playing = null
+				@play()
 				return
-
-			request = Http.get(stream_url) # Getting stream data
-			request.on('response', (song_stream) => # Downloading stream data
-				@playing.buffer(song_stream)
-
-				interval = setInterval(=>
-					time_remaining = song.start_time - Date.now()
-					if time_remaining < 0
-						@log("Should be playing now.")
-						clearInterval(interval)
-					else
-						@log("Waiting #{time_remaining / 1000}s to sync with all devices.")
-				, 1000)
-
-				# Use a setTimeout to idle until 500ms before the planned start time.
-				setTimeout(=>
-					# Busy wait to be as accurate as possible to the start time.
-					while song.start_time - Date.now() > 0
-						null
-					@playing.play() # Playing music
-				, (song.start_time - 500) - Date.now())
+			@playing.on('end', =>
+				@log('Aborting request')
+				request.abort()
 			)
+			@playing.buffer(songStream)
+
+			interval = setInterval(=>
+				time_remaining = song.start_time - Date.now()
+				if time_remaining < 0
+					@log("Should be playing now.")
+					clearInterval(interval)
+				else
+					@log("Waiting #{time_remaining / 1000}s to sync with all devices.")
+			, 1000)
+
+			# Use a setTimeout to idle until 500ms before the planned start time.
+			setTimeout(=>
+				# Busy wait to be as accurate as possible to the start time.
+				while song.start_time - Date.now() > 0
+					null
+				@playing.play() # Playing music
+			, (song.start_time - 500) - Date.now())
 		)
 
 module.exports = Playlist
