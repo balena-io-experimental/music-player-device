@@ -5,7 +5,7 @@ if !settings.DEBUG
 
 SERVER_TIME_DIFF = 0
 
-Music = require('./music')
+Playlist = require('./playlist')
 Twitter = require('ntwitter')
 request = require('request')
 
@@ -13,6 +13,8 @@ request = require('request')
 twitter = new Twitter(
 	settings.TWITTER
 )
+
+playlist = new Playlist()
 
 commands = 
 	play: (tweet_text, tweet_time) ->
@@ -35,12 +37,12 @@ commands =
 		console.log(song)
 
 		console.log("'#{song.artist} - #{song.name}': Adding to queue.")
-		Music.queue.push(song) # Pushing the name and when to start playing
+		playlist.push(song) # Pushing the name and when to start playing
 		console.log("'#{song.artist} - #{song.name}': Added to queue.")
-		Music.play() # Start playing the queue or do nothing if already playing
+		playlist.play() # Start playing the queue or do nothing if already playing
 
 	skip: ->
-		Music.skip()
+		playlist.skip()
 
 # Getting the user timeline
 watchTwitter = ->
