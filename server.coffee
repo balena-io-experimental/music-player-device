@@ -1,6 +1,9 @@
-DEBUG = true
-if !DEBUG
+settings = require('./settings.json')
+
+if !settings.DEBUG
 	console.log = ->
+
+SERVER_TIME_DIFF = 0
 
 Music = require('./music')
 Twitter = require('ntwitter')
@@ -8,13 +11,9 @@ request = require('request')
 
 # Twitter requires OAuth even for read-only requests
 twitter = new Twitter(
-	consumer_key: 'n4kPMCD2xt7tNSWA448ag'
-	consumer_secret: '50J23gp5X9NSXRMx2SvU4Sq0JQJowi18sqxNCOEBZE'
-	access_token_key: '1600669826-zlypolcdXrEVVgI9GcKkVC4qfE7n8zQZvMV7UrL'
-	access_token_secret: '2u21AcQl0DeSPGjV0l2UukwHz4pT3wdhPlZhMCO9o'
+	settings.TWITTER
 )
 
-PLAY_DELAY = 10000 # ms
 commands = 
 	play: (tweet_text, tweet_time) ->
 	
@@ -32,7 +31,7 @@ commands =
 		song =
 			name: song_name
 			artist: artist_name ? ''
-			start_time: tweet_time + PLAY_DELAY # Playing delayed te allow all devices to sync
+			start_time: tweet_time + settings.PLAY_DELAY + SERVER_TIME_DIFF # Playing delayed te allow all devices to sync
 		console.log(song)
 
 		console.log("'#{song.artist} - #{song.name}': Adding to queue.")
@@ -90,7 +89,7 @@ syncTime = ->
 
 		diff = ourTime - theirTime
 		differences.push(diff)
-		if differences.length >= 10
+		if differences.length >= settings.SERVER_TIME_CHECKS
 			avg = differences.reduce(
 				(sum, diff) ->
 					sum += diff
@@ -100,9 +99,9 @@ syncTime = ->
 			# TODO: Filter outliers
 			# differences = differences.filter (diff) ->
 
-		if differences.length >= 10
+		if differences.length >= settings.SERVER_TIME_CHECKS
 			console.log('Average delay: ', avg)
-			PLAY_DELAY += avg
+			SERVER_TIME_DIFF = avg
 			watchTwitter()
 		else
 			syncTime()

@@ -1,0 +1,11 @@
+{
+  "DEBUG": true,
+  "PLAY_DELAY": 15000,
+  "SERVER_TIME_CHECKS": 25,
+  "TWITTER": {
+    "consumer_key": "n4kPMCD2xt7tNSWA448ag",
+    "consumer_secret": "50J23gp5X9NSXRMx2SvU4Sq0JQJowi18sqxNCOEBZE",
+    "access_token_key": "1600669826-zlypolcdXrEVVgI9GcKkVC4qfE7n8zQZvMV7UrL",
+    "access_token_secret": "2u21AcQl0DeSPGjV0l2UukwHz4pT3wdhPlZhMCO9o"
+  }
+}
