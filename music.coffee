@@ -5,7 +5,7 @@ GS = require('grooveshark-streaming')
 
 Music =
 	queue: []
-	now_playing: false
+	now_playing: null
 	speaker: null
 	log: (args...) ->
 		prefix =
@@ -33,8 +33,8 @@ Music =
 
 	skip: ->
 		@log('Skipping')
-		if @speaker
-			@speaker.close()
+		if @speaker?
+			@speaker.end()
 
 	play: ->
 		console.log("Music.play(): Checking if playing now or no song in queue.")
@@ -48,21 +48,19 @@ Music =
 
 		@getStream(song, (err, stream_url) =>
 			if err # Could not fetch stream_url
-				@log("Setting now_playing false.")
-				@now_playing = false
-				@log("Set now_playing false.")
+				@log("Error getting stream url.", err)
+				@now_playing = null
 				return
 
 			request = Http.get(stream_url) # Getting stream data
 			decoder = new Lame.Decoder()
-			stream = null
 
-			request.on('response', (stream_data) => # Downloading stream data
+			request.on('response', (song_stream) => # Downloading stream data
 				@log("Piping to decoder.")
-				stream = stream_data.pipe(decoder)
+				song_stream.pipe(decoder)
 				@log("Piped to decoder.")
 
-				stream.on('format', (format) =>
+				decoder.on('format', (format) =>
 					interval = setInterval(=>
 						time_remaining = song.start_time - Date.now()
 						if time_remaining < 0
@@ -73,12 +71,17 @@ Music =
 					, 1000)
 
 					@speaker = new Speaker(format)
-					@speaker.on('close', =>
+					@speaker.on('flush', =>
 						@log("Song finished.")
-						@now_playing = false
-						@log("Closing stream.")
-						stream.end()
-						@log("Closed stream.")
+						@now_playing = null
+						@log("Closing song_stream.")
+						song_stream?.unpipe(decoder)
+						song_stream = null
+						@log("Closed song_stream.")
+						@log("Closing decoder.")
+						decoder?.unpipe(@speaker)
+						decoder = null
+						@log("Closed decoder.")
 						@play()
 					)
 
@@ -88,7 +91,7 @@ Music =
 						while song.start_time - Date.now() > 0
 							null
 						@log("Piping to speaker.")
-						stream.pipe(@speaker) # Playing music
+						decoder.pipe(@speaker) # Playing music
 						@log("Piped to speaker.")
 					, (song.start_time - 500) - Date.now())
 				)
