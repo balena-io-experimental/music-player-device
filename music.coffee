@@ -72,7 +72,11 @@ Music =
 							@log("Waiting #{time_remaining / 1000}s to sync with all devices.")
 					, 1000)
 
+					# Use a setTimeout to idle until 500ms before the planned start time.
 					setTimeout(=>
+						# Busy wait to be as accurate as possible to the start time.
+						while song.start_time - Date.now() > 0
+							null
 						@log("Piping to speaker.")
 						@speaker = new Speaker(format)
 						stream.pipe(@speaker) # Playing music
@@ -86,7 +90,7 @@ Music =
 							@log("Closed stream.")
 							@play()
 						)
-					, song.start_time - Date.now())
+					, (song.start_time - 500) - Date.now())
 				)
 			)
 		)
