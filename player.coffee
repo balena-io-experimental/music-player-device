@@ -39,7 +39,7 @@ class Player extends EventEmitter2
 	play: ->
 		@log('Playing')
 		if @ready
-			_play()
+			@_play()
 		else
 			@once('ready', @_play)
 
