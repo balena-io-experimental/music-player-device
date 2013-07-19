@@ -8,6 +8,7 @@ SERVER_TIME_DIFF = 0
 Music = require('./music')
 Twitter = require('ntwitter')
 request = require('request')
+gauss = require('gauss')
 
 # Twitter requires OAuth even for read-only requests
 twitter = new Twitter(
@@ -90,14 +91,11 @@ syncTime = ->
 		diff = ourTime - theirTime
 		differences.push(diff)
 		if differences.length >= settings.SERVER_TIME_CHECKS
-			avg = differences.reduce(
-				(sum, diff) ->
-					sum += diff
-				0
-			) / differences.length #/
+			avg = differences.toVector().mean()
 
-			# TODO: Filter outliers
-			# differences = differences.filter (diff) ->
+			# Filter outliers
+			acceptableDev = differences.toVector().stdev() * 2
+			differences = differences.filter((diff) -> Math.abs(avg - diff) < acceptableDev)
 
 		if differences.length >= settings.SERVER_TIME_CHECKS
 			console.log('Average delay: ', avg)
