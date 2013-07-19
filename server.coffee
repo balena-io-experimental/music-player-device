@@ -4,6 +4,7 @@ if !DEBUG
 
 Music = require('./music')
 Twitter = require('ntwitter')
+request = require('request')
 
 # Twitter requires OAuth even for read-only requests
 twitter = new Twitter(
@@ -13,6 +14,7 @@ twitter = new Twitter(
 	access_token_secret: '2u21AcQl0DeSPGjV0l2UukwHz4pT3wdhPlZhMCO9o'
 )
 
+PLAY_DELAY = 10000 # ms
 commands = 
 	play: (tweet_text, tweet_time) ->
 	
@@ -27,11 +29,10 @@ commands =
 				[artist_name, song_name] = tweet_parts
 
 		console.log("'#{tweet_text}': Created at '#{tweet_time}'.")
-		delay = 10000 # ms
 		song =
 			name: song_name
 			artist: artist_name ? ''
-			start_time: tweet_time + delay # Playing delayed te allow all devices to sync
+			start_time: tweet_time + PLAY_DELAY # Playing delayed te allow all devices to sync
 		console.log(song)
 
 		console.log("'#{song.artist} - #{song.name}': Adding to queue.")
@@ -76,4 +77,33 @@ watchTwitter = ->
 		# Handle an error
 		timeline.on('error', rewatch)
 	)
-watchTwitter()
+
+
+differences = []
+syncTime = ->
+	startTime = Date.now()
+	request 'http://paras.rulemotion.com:2193/time', (err, res, body) ->
+		endTime = Date.now()
+		delay = endTime - startTime
+		ourTime = endTime - (delay / 2) #/
+		theirTime = parseInt(body, 10)
+
+		diff = ourTime - theirTime
+		differences.push(diff)
+		if differences.length >= 10
+			avg = differences.reduce(
+				(sum, diff) ->
+					sum += diff
+				0
+			) / differences.length #/
+
+			# TODO: Filter outliers
+			# differences = differences.filter (diff) ->
+
+		if differences.length >= 10
+			console.log('Average delay: ', avg)
+			PLAY_DELAY += avg
+			watchTwitter()
+		else
+			syncTime()
+syncTime()
