@@ -17,7 +17,7 @@ class Playlist extends Array
 		GS.Tinysong.getSongInfo(song.name, song.artist, (err, info) => # Getting SongID
 			if err or !info? # Not found
 				@log("Not found.")
-				callback(err)
+				callback(true) # Cannot return err because GS has a bug and returns null
 				return
 			@log("Got info", info)
 
