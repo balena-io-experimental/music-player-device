@@ -8,7 +8,8 @@
     "speaker": "~0.0.10",
     "request": "~2.22.0",
     "eventemitter2": "~0.4.12",
-    "sntp": "~0.2.4"
+    "sntp": "~0.2.4",
+    "async": "~0.2.9"
   },
   "devDependencies": {
     "coffee-script": "~1.6.3"
