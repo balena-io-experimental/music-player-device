@@ -3,7 +3,7 @@ settings = require('./settings.json')
 if !settings.DEBUG
 	console.log = ->
 
-SERVER_TIME_DIFF = 0
+# SERVER_TIME_DIFF = 0
 
 Playlist = require('./playlist')
 Twitter = require('ntwitter')
@@ -33,7 +33,7 @@ commands =
 		song =
 			name: song_name
 			artist: artist_name ? ''
-			start_time: tweet_time + settings.PLAY_DELAY + SERVER_TIME_DIFF # Playing delayed te allow all devices to sync
+			start_time: tweet_time + settings.PLAY_DELAY # + SERVER_TIME_DIFF # Playing delayed te allow all devices to sync
 		console.log(song)
 
 		console.log("'#{song.artist} - #{song.name}': Adding to queue.")
