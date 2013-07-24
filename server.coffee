@@ -79,7 +79,7 @@ watchTwitter = ->
 		timeline.on('error', rewatch)
 	)
 
-
+###
 differences = []
 syncTime = ->
 	startTime = Date.now()
@@ -108,3 +108,6 @@ syncTime = ->
 		else
 			syncTime()
 syncTime()
+###
+
+watchTwitter()
