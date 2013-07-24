@@ -1,4 +1,5 @@
 settings = require('./settings.json')
+sntp = require('sntp')
 
 if !settings.DEBUG
 	console.log = ->
@@ -16,7 +17,7 @@ twitter = new Twitter(
 
 playlist = new Playlist()
 
-commands = 
+commands =
 	play: (tweet_text, tweet_time) ->
 	
 		tweet_parts = tweet_text.split(' - ')
@@ -41,8 +42,15 @@ commands =
 		console.log("'#{song.artist} - #{song.name}': Added to queue.")
 		playlist.play() # Start playing the queue or do nothing if already playing
 
-	skip: ->
-		playlist.skip()
+	skip: (text, time) ->
+		sntp.time((error, t) ->
+			now = Date.now() + t
+			if error
+				return console.error(error)
+			setTimeout(->
+				playlist.skip()
+			, time + 3000 - now)
+		)
 
 # Getting the user timeline
 watchTwitter = ->
