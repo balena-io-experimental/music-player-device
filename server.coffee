@@ -43,16 +43,13 @@ commands =
 		playlist.play() # Start playing the queue or do nothing if already playing
 
 	skip: (text, time) ->
-		start = Date.now()
-		console.log(Date.now() - start, "Got skip, syncing time", text, time)
 		sntp.time((error, result) ->
 			now = Date.now() + result.t
 			if error
-				return console.error(Date.now() - start, "Error synching time", error)
-			console.log(Date.now() - start, "Time synched, got offset", result.t)
-			console.log(Date.now() - start, "Scheduling skip in", time + 10000 - now)
+				return console.error("Error synching time", error)
 			setTimeout(->
-				console.log(Date.now() - start, "Skipping..")
+				if playlist.length isnt 0
+					playlist[0].start_time = now + 3000 + settings.PLAY_DELAY
 				playlist.skip()
 			, time + 3000 - now)
 		)
