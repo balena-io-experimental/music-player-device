@@ -87,12 +87,10 @@ class Playlist extends Array
 				return @play()
 
 			# Use a setTimeout to idle until 500ms before the planned start time.
+			now = Date.now() + results.time.t
 			setTimeout(=>
-				# Busy wait to be as accurate as possible to the start time.
-				while song.start_time - Date.now() > 0
-					null
 				@playing.play() # Playing music
-			, (song.start_time - 500) - Date.now() + results.time.t)
+			, song.start_time - now)
 		)
 
 module.exports = Playlist
