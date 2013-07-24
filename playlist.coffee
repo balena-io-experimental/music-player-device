@@ -1,6 +1,8 @@
 Http = require('http')
 GS = require('grooveshark-streaming')
 Player = require('./player')
+async = require('async')
+sntp = require('sntp')
 
 class Playlist extends Array
 	constructor: -> super()
@@ -55,25 +57,34 @@ class Playlist extends Array
 		)
 		console.log("Music.play(): Got", song)
 
-		@getStream(song, (err, songStream, request) =>
-			if err
-				@playing = null
-				@play()
-				return
-			@playing.on('end', =>
-				@log('Aborting request')
-				request.abort()
-			)
-			@playing.buffer(songStream)
+		tasks =
+			time: sntp.time
+			song: (callback) =>
+				@getStream(song, (error, songStream, request) =>
+					if error
+						return callback(error)
 
-			interval = setInterval(=>
-				time_remaining = song.start_time - Date.now()
-				if time_remaining < 0
-					@log("Should be playing now.")
-					clearInterval(interval)
-				else
-					@log("Waiting #{time_remaining / 1000}s to sync with all devices.")
-			, 1000)
+					@playing.on('end', =>
+						@log('Aborting request')
+						request.abort()
+					)
+					@playing.buffer(songStream)
+
+					interval = setInterval(=>
+						time_remaining = song.start_time - Date.now()
+						if time_remaining < 0
+							@log("Should be playing now.")
+							clearInterval(interval)
+						else
+							@log("Waiting #{time_remaining / 1000}s to sync with all devices.")
+					, 1000)
+					callback()
+				)
+
+		async.parallel(tasks, (error, results) =>
+			if error
+				@playing = null
+				return @play()
 
 			# Use a setTimeout to idle until 500ms before the planned start time.
 			setTimeout(=>
@@ -81,7 +92,7 @@ class Playlist extends Array
 				while song.start_time - Date.now() > 0
 					null
 				@playing.play() # Playing music
-			, (song.start_time - 500) - Date.now())
+			, (song.start_time - 500) - Date.now() + results.time.t)
 		)
 
 module.exports = Playlist
