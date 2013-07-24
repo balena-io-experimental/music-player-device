@@ -49,7 +49,7 @@ commands =
 				return console.error(error)
 			setTimeout(->
 				playlist.skip()
-			, time + 3000 - now)
+			, time + 10000 - now)
 		)
 
 # Getting the user timeline
