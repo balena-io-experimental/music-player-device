@@ -13,5 +13,8 @@
   },
   "devDependencies": {
     "coffee-script": "~1.6.3"
+  },
+  "scripts": {
+    "start": "coffee server.coffee"
   }
 }
