@@ -1,5 +1,4 @@
 # imports
-_ = require 'lodash'
 sntp = require 'sntp'
 async = require 'async'
 Firebase = require 'firebase'
