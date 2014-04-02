@@ -9,7 +9,7 @@ Player = require './player'
 
 # constants and global vars
 
-GRACE = 7000 # ms
+GRACE = 10000 # ms
 
 playlist = null
 prevNowPlayingState = null
@@ -36,10 +36,13 @@ resetNowPlaying = ->
   nowPlayingRef.set shouldPlay: true
 
 resetIfNeeded = (initialNowPlayingState) ->
+  console.log initialNowPlayingState
+  if not initialNowPlayingState.shouldPlay
+    return
   setTimeout ->
     songChanged = nowPlayingState.songId != initialNowPlayingState.songId
     progressChanged = nowPlayingState.progress != initialNowPlayingState.progress
-    if songChanged or progressChanged
+    if songChanged or progressChanged or not nowPlayingState.shouldPlay
       return
     console.log 'Looks like nobody is playing'
     resetNowPlaying()
@@ -136,10 +139,10 @@ play = ->
   if player # already playing
     console.log 'Already playing'
     return
+  console.log("Music.play(): Got", song)
   player = new Player(song)
   player.on 'end', ->
     onSongEnded songId
-  console.log("Music.play(): Got", song)
 
   async.auto
     songData: (cb) ->
@@ -150,11 +153,13 @@ play = ->
       GS.getData origTitle, (err, info) ->
         if err
           console.log "Get info error", err
-        cb err, info
-        songRef.child('detectedTitle').set "#{info.artist} - #{info.title}"
-        songRef.child('origTitle').set origTitle
-        songRef.child('title').set null
-        songRef.child('gsId').set info.id
+          return cb err
+        cb null, info
+        songRef.update
+          detectedTitle: "#{info.artist} - #{info.title}"
+          origTitle: origTitle
+          title: null
+          gsId: info.id
     stream: ['songData', (cb, results) ->
       info = results.songData
       GS.getStream info.id, (error, stream, request) ->
