@@ -2,18 +2,18 @@
   "name": "music-player",
   "version": "0.2.0",
   "dependencies": {
-    "grooveshark-streaming": "~0.0.3",
-    "lame": "~1.0.2",
-    "ntwitter": "~0.5.0",
-    "speaker": "~0.0.10",
-    "request": "~2.22.0",
-    "eventemitter2": "~0.4.12",
-    "sntp": "~0.2.4",
-    "async": "~0.2.9"
+    "async": "^0.6.2",
+    "coffee-script": "^1.7.1",
+    "eventemitter2": "^0.4.13",
+    "firebase": "^1.0.11",
+    "grooveshark-streaming": "0.0.5",
+    "lame": "^1.0.3",
+    "lodash": "^2.4.1",
+    "request": "^2.34.0",
+    "sntp": "^1.0.3",
+    "speaker": "0.0.10"
   },
-  "devDependencies": {
-    "coffee-script": "~1.6.3"
-  },
+  "devDependencies": {},
   "scripts": {
     "start": "coffee server.coffee"
   }

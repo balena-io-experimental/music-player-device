@@ -3,12 +3,13 @@ Speaker = require('speaker')
 {EventEmitter2} = require('eventemitter2')
 
 class Player extends EventEmitter2
-  constructor: (@song) ->
+  constructor: (song) ->
     super()
     @decoder = new Lame.Decoder()
     @speaker = null
     @ready = false
-  log: (args...) -> console.log("'#{@song.artist} - #{@song.name}':", args...)
+    @title = song.detectedTitle or song.title
+  log: (args...) -> console.log("'#{@title}':", args...)
   buffer: (songStream) ->
     @log("Piping to decoder.")
     songStream.pipe(@decoder)
@@ -47,12 +48,12 @@ class Player extends EventEmitter2
   pause: ->
     @log('Pausing')
     @off('ready', @_play)
-    @decoder.unpipe(@speaker)
+    @decoder?.unpipe(@speaker)
     @emit('paused')
 
   end: ->
     @log('Stopping')
     @pause()
-    @speaker.end()
+    @speaker?.end()
 
 module.exports = Player

@@ -1,124 +1,225 @@
-settings = require('./settings.json')
-sntp = require('sntp')
+# imports
+_ = require 'lodash'
+sntp = require 'sntp'
+async = require 'async'
+Firebase = require 'firebase'
+{EventEmitter2} = require 'eventemitter2'
 
-if !settings.DEBUG
-  console.log = ->
+GS = require './grooveshark'
+Player = require './player'
 
-# SERVER_TIME_DIFF = 0
+# constants and global vars
 
-Playlist = require('./playlist')
-Twitter = require('ntwitter')
-request = require('request')
+GRACE = 4000 # ms
 
-# Twitter requires OAuth even for read-only requests
-twitter = new Twitter(
-  settings.TWITTER
-)
+playlist = null
+prevNowPlayingState = null
+nowPlayingState = null
+progressInterval = null
+player = null
 
-playlist = new Playlist()
+currentTime = (cb) ->
+  sntp.time (err, time) ->
+    return cb(err) if err
+    cb null, Date.now() + time.t
 
-commands =
-  play: (tweet_text, tweet_time) ->
+# FB refs
 
-    tweet_parts = tweet_text.split(' - ')
+fireRef = new Firebase('https://vocalist.firebaseio.com')
+playlistRef = fireRef.child 'playlist'
+nowPlayingRef = fireRef.child 'playing'
 
-    tweet_parts = tweet_parts.map((s) -> s.trim())
+# events routing
 
-    switch tweet_parts.length
-      when 1
-        [song_name] = tweet_parts
-      else
-        [artist_name, song_name] = tweet_parts
+eventsHub = new EventEmitter2()
 
-    console.log("'#{tweet_text}': Created at '#{tweet_time}'.")
-    song =
-      name: song_name
-      artist: artist_name ? ''
-      start_time: tweet_time + settings.PLAY_DELAY # + SERVER_TIME_DIFF # Playing delayed te allow all devices to sync
-    console.log(song)
+resetNowPlaying = ->
+  nowPlayingRef.set shouldPlay: true
 
-    console.log("'#{song.artist} - #{song.name}': Adding to queue.")
-    playlist.push(song) # Pushing the name and when to start playing
-    console.log("'#{song.artist} - #{song.name}': Added to queue.")
-    playlist.play() # Start playing the queue or do nothing if already playing
+resetIfNeeded = (initialNowPlayingState) ->
+  setTimeout ->
+    songChanged = nowPlayingState.songId != initialNowPlayingState.songId
+    progressChanged = nowPlayingState.progress != initialNowPlayingState.progress
+    if songChanged or progressChanged
+      return
+    console.log 'Looks like nobody is playing'
+    resetNowPlaying()
+  , 5000
 
-  skip: (text, time) ->
-    sntp.time((error, result) ->
-      now = Date.now() + result.t
-      if error
-        return console.error("Error synching time", error)
-      setTimeout(->
-        if playlist.length isnt 0
-          playlist[0].start_time = now + 3000 + settings.PLAY_DELAY
-        playlist.skip()
-      , time + 3000 - now)
-    )
+onStateChanged = ->
+  # first time we got nowPlayingState setup reset if needed
+  if nowPlayingState and not prevNowPlayingState
+    resetIfNeeded nowPlayingState
 
-# Getting the user timeline
-watchTwitter = ->
-  twitter.stream('user', {}, (timeline) ->
-    timeline.on('data', (tweet) ->
-      return if tweet.text is undefined # Not a tweet
+  # don't do anything until we get all data
+  if not nowPlayingState and playlist
+    return
 
-      console.log("'#{tweet.text}': Got tweet.")
-      # tweet.text syntax shoud be: #music-player song_name artist_name
-      if /music-player/.test(tweet.text)
-        # Removing #music-player
-        tweet_text = tweet.text.replace(/^.*music-player-?/, '').trim()
-        tweet_parts = tweet_text.split(' ')
-        command = tweet_parts.shift().toLowerCase()
-        tweet_text = tweet_parts.join(' ')
+  switchToStop = not nowPlayingState?.shouldPlay
+  if switchToStop
+    return eventsHub.emit 'stop'
 
-        if commands.hasOwnProperty(command)
-          commands[command](tweet_text, new Date(tweet.created_at).getTime())
-        else
-          console.error("Unknown command: #{command}")
-    )
+  switchToStart = prevNowPlayingState?.shouldPlay == false and nowPlayingState?.shouldPlay
+  if switchToStart
+    return eventsHub.emit 'play_next'
 
-    rewatched = false
-    rewatch = (args...) ->
-      console.log('Trying to rewatch:', rewatched, args)
-      if rewatched
+  nobodyPlaying = not nowPlayingState?.songId and nowPlayingState?.shouldPlay
+  if nobodyPlaying
+    return eventsHub.emit 'play_next'
+
+  songEnded = prevNowPlayingState?.songId and not nowPlayingState?.songId
+  if songEnded and nowPlayingState?.shouldPlay
+    return eventsHub.emit 'play_next'
+
+  newSong = not prevNowPlayingState?.songId and nowPlayingState?.songId
+  if newSong and nowPlayingState?.shouldPlay
+    return eventsHub.emit 'play'
+
+# subscribe to FB changes
+
+onPlaylistChanged = (snapshot) ->
+  playlist = snapshot.val()
+  onStateChanged()
+
+onNowPlayingChanged = (snapshot) ->
+  prevNowPlayingState = nowPlayingState
+  nowPlayingState = snapshot.val()
+  onStateChanged()
+
+playlistRef.on 'value', onPlaylistChanged
+nowPlayingRef.on 'value', onNowPlayingChanged
+
+# play functions
+
+trackProgress = ->
+  if not nowPlayingState?.playStart
+    return
+  currentTime (err, now) ->
+    progress = Math.floor (now - nowPlayingState.playStart) / 1000
+    nowPlayingRef.child('progress').set progress
+
+onSongEnded = (songId) ->
+  clearInterval progressInterval
+  songRef = playlistRef.child(songId)
+  songRef.child('completed').set true
+  player?.end()
+  player = null
+  nowPlayingRef.transaction (currentVal) ->
+    if currentVal?.songId != songId
+      return
+    if not currentVal?.shouldPlay
+      return
+    return {
+      songId: null
+      shouldPlay: true
+      playStart: null
+    }
+
+doPlay = ->
+  player.play()
+  progressInterval = setInterval trackProgress, 990
+
+play = ->
+  console.log 'play'
+  if not nowPlayingState?.shouldPlay
+    console.log 'shouldPlay == false'
+    return
+
+  songId = nowPlayingState.songId
+  song = playlist?[songId]
+  if not song
+    player?.end()
+    player = null
+    console.log 'Song not found, id', songId
+    resetNowPlaying()
+    return
+
+  if player # already playing
+    console.log 'Already playing'
+    return
+  player = new Player(song)
+  player.on 'end', ->
+    onSongEnded songId
+  console.log("Music.play(): Got", song)
+
+  async.auto
+    songData: (cb) ->
+      if song.gsId
+        return cb null, id: song.gsId
+      songRef = playlistRef.child(songId)
+      origTitle = playlist[songId].title
+      GS.getData origTitle, (err, info) ->
+        if err
+          console.log "Get info error", err
+        cb err, info
+        songRef.child('detectedTitle').set "#{info.artist} - #{info.title}"
+        songRef.child('origTitle').set origTitle
+        songRef.child('title').set null
+        songRef.child('gsId').set info.id
+    stream: ['songData', (cb, results) ->
+      info = results.songData
+      GS.getStream info.id, (error, stream, request) ->
+        cb error, { stream, request }
+    ],
+    now: ['stream', currentTime]
+  , (err, results) ->
+    if err
+      console.log err
+      return
+    diff = nowPlayingState.playStart - results.now
+    if diff <= 0
+      console.log Date(results.now)
+      console.log Date(nowPlayingState.playStart)
+      console.log diff
+      console.log 'Too little too late'
+      player?.end()
+      player = null
+      return
+    player.on 'end', ->
+      console.log 'Aborting request'
+      results.stream.request.abort()
+    player.buffer results.stream.stream
+    setTimeout doPlay, diff
+
+playNext = ->
+  console.log 'play_next'
+  if not nowPlayingState?.shouldPlay
+    return
+  nextSongId = null
+  for id, song of playlist
+    if not song.completed
+      nextSongId = id
+      break
+  if not nextSongId
+    return
+  currentTime (err, now) ->
+    playStart = now + GRACE
+    nowPlayingRef.transaction (currentVal) ->
+      if currentVal?.songId
         return
-      rewatched = true
-      watchTwitter()
-    # Handle a disconnection
-    timeline.on('end', rewatch)
-    # Handle a 'silent' disconnection from Twitter, no end/error event fired
-    timeline.on('destroy', rewatch)
-    # Handle an error
-    timeline.on('error', rewatch)
-  )
+      if not currentVal?.shouldPlay
+        return
+      return {
+        shouldPlay: true
+        songId: nextSongId
+        playStart: playStart
+      }
 
-###
-differences = []
-syncTime = ->
-  startTime = Date.now()
-  request 'http://paras.rulemotion.com:2193/time', (err, res, body) ->
-    endTime = Date.now()
-    delay = endTime - startTime
-    ourTime = endTime - (delay / 2) #/
-    theirTime = parseInt(body, 10)
+stop = ->
+  console.log 'Stop playing'
+  player?.end()
+  player = null
+  songId = nowPlayingState?.songId
+  if songId
+    onSongEnded songId
 
-    diff = ourTime - theirTime
-    differences.push(diff)
-    if differences.length >= settings.SERVER_TIME_CHECKS
-      avg = differences.reduce(
-        (sum, diff) ->
-          sum += diff
-        0
-      ) / differences.length #/
 
-      # TODO: Filter outliers
-      # differences = differences.filter (diff) ->
+# subscribe to events
 
-    if differences.length >= settings.SERVER_TIME_CHECKS
-      console.log('Average delay: ', avg)
-      SERVER_TIME_DIFF = avg
-      watchTwitter()
-    else
-      syncTime()
-syncTime()
-###
+eventsHub.on 'stop', stop
+eventsHub.on 'play_next', playNext
+eventsHub.on 'play', play
 
-watchTwitter()
+# run
+
+console.log '\n\n\nRunning'
