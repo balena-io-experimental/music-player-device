@@ -15,6 +15,7 @@
   },
   "devDependencies": {},
   "scripts": {
-    "start": "coffee server.coffee"
+    "start": "coffee server.coffee",
+    "preinstall": "bash deps.sh"
   }
 }
