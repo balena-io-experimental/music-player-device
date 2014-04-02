@@ -35,7 +35,8 @@ eventsHub = new EventEmitter2()
 resetNowPlaying = ->
   nowPlayingRef.set shouldPlay: true
 
-resetIfNeeded = (initialNowPlayingState) ->
+resetIfNeeded = ->
+  initialNowPlayingState = nowPlayingState
   if not initialNowPlayingState.shouldPlay
     return
   setTimeout ->
@@ -50,7 +51,7 @@ resetIfNeeded = (initialNowPlayingState) ->
 onStateChanged = ->
   # first time we got nowPlayingState setup reset if needed
   if nowPlayingState and not prevNowPlayingState
-    resetIfNeeded nowPlayingState
+    resetIfNeeded()
 
   # don't do anything until we get all data
   if not nowPlayingState and playlist
@@ -140,6 +141,7 @@ play = ->
   if player # already playing
     console.log 'Already playing'
     return
+
   console.log("Music.play(): Got", song)
   player = new Player(song)
   player.on 'end', ->
@@ -191,6 +193,7 @@ play = ->
       console.log 'Should have started', new Date(nowPlayingState.playStart)
       console.log 'Diff', diff
       console.log 'Too little too late'
+      resetIfNeeded()
       return
     setTimeout doPlay, diff
     player.on 'end', ->

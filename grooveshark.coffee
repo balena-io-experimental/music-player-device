@@ -9,7 +9,7 @@ module.exports.getData = (song, callback) ->
     if err or not info # Not found
       console.log "Not found."
       # Cannot return err because GS has a bug and returns null
-      return callback true
+      return callback err or true
     console.log "Got info", info
     callback null, {
       artist: info.ArtistName
