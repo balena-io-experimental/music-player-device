@@ -152,7 +152,7 @@ play = ->
       GS.getData origTitle, (err, info) ->
         if err
           console.log "Get info error", err
-
+          player = null
           songRef.update
             detectedTitle: "Song not found"
             origTitle: origTitle
@@ -184,7 +184,6 @@ play = ->
       return
     diff = nowPlayingState.playStart - results.now
     if diff <= 0
-      player?.end()
       player = null
       console.log 'Now                ', new Date(results.now)
       console.log 'Should have started', new Date(nowPlayingState.playStart)
