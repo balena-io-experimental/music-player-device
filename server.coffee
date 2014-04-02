@@ -94,6 +94,9 @@ trackProgress = ->
   if not nowPlayingState?.playStart
     return
   currentTime (err, now) ->
+    if err
+      console.error err
+      return
     progress = Math.floor (now - nowPlayingState.playStart) / 1000
     nowPlayingRef.child('progress').set progress
 
@@ -163,7 +166,7 @@ play = ->
     now: ['stream', currentTime]
   , (err, results) ->
     if err
-      console.log err
+      console.error err
       return
     diff = nowPlayingState.playStart - results.now
     if diff <= 0
@@ -192,6 +195,9 @@ playNext = ->
   if not nextSongId
     return
   currentTime (err, now) ->
+    if err
+      console.log err
+      return
     playStart = now + GRACE
     nowPlayingRef.transaction (currentVal) ->
       if currentVal?.songId
