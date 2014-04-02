@@ -152,6 +152,16 @@ play = ->
       GS.getData origTitle, (err, info) ->
         if err
           console.log "Get info error", err
+
+          songRef.update
+            detectedTitle: "Song not found"
+            origTitle: origTitle
+            title: null
+            completed: true
+          nowPlayingRef.transaction (currentVal) ->
+            if currentVal?.songId != songId
+              return
+            return shouldPlay: true
           return cb err
         cb null, info
         songRef.update
