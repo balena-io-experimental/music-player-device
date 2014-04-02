@@ -36,7 +36,6 @@ resetNowPlaying = ->
   nowPlayingRef.set shouldPlay: true
 
 resetIfNeeded = (initialNowPlayingState) ->
-  console.log initialNowPlayingState
   if not initialNowPlayingState.shouldPlay
     return
   setTimeout ->
@@ -179,11 +178,12 @@ play = ->
       player?.end()
       player = null
       return
+    setTimeout doPlay, diff
     player.on 'end', ->
       console.log 'Aborting request'
       results.stream.request.abort()
     player.buffer results.stream.stream
-    setTimeout doPlay, diff
+    player.setTitle song
 
 playNext = ->
   console.log 'play_next'

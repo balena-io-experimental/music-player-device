@@ -8,8 +8,13 @@ class Player extends EventEmitter2
     @decoder = new Lame.Decoder()
     @speaker = null
     @ready = false
+    @setTitle song
+
+  setTitle: (song) ->
     @title = song.detectedTitle or song.title
+
   log: (args...) -> console.log("'#{@title}':", args...)
+
   buffer: (songStream) ->
     @log("Piping to decoder.")
     songStream.pipe(@decoder)
