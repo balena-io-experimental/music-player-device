@@ -9,7 +9,7 @@ Player = require './player'
 
 # constants and global vars
 
-GRACE = 4000 # ms
+GRACE = 7000 # ms
 
 playlist = null
 prevNowPlayingState = null
