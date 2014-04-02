@@ -129,10 +129,12 @@ play = ->
   songId = nowPlayingState.songId
   song = playlist?[songId]
   if not song
-    player?.end()
-    player = null
-    console.log 'Song not found, id', songId
+    console.log 'Song not found, id:', songId
     resetNowPlaying()
+    return
+
+  if song.completed
+    console.log 'Already completed, skip'
     return
 
   if player # already playing
