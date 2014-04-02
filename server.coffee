@@ -170,9 +170,9 @@ play = ->
       return
     diff = nowPlayingState.playStart - results.now
     if diff <= 0
-      console.log Date(results.now)
-      console.log Date(nowPlayingState.playStart)
-      console.log diff
+      console.log 'Now', new Date(results.now)
+      console.log 'Should have started', new Date(nowPlayingState.playStart)
+      console.log 'Diff', diff
       console.log 'Too little too late'
       player?.end()
       player = null
