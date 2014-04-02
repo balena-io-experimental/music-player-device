@@ -93,12 +93,9 @@ nowPlayingRef.on 'value', onNowPlayingChanged
 trackProgress = ->
   if not nowPlayingState?.playStart
     return
-  currentTime (err, now) ->
-    if err
-      console.error err
-      return
-    progress = Math.floor (now - nowPlayingState.playStart) / 1000
-    nowPlayingRef.child('progress').set progress
+  now = sntp.now()
+  progress = Math.floor (now - nowPlayingState.playStart) / 1000
+  nowPlayingRef.child('progress').set progress
 
 onSongEnded = (songId) ->
   clearInterval progressInterval
