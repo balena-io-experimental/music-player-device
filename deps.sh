@@ -1,2 +1,2 @@
 apt-get update
-apt-get install -y libasound2-dev
+apt-get install -y python libasound2-dev
