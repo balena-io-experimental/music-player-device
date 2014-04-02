@@ -169,14 +169,17 @@ play = ->
     if err
       console.error err
       return
+    if not player
+      console.log 'Player disappeared?'
+      return
     diff = nowPlayingState.playStart - results.now
     if diff <= 0
-      console.log 'Now', new Date(results.now)
+      player?.end()
+      player = null
+      console.log 'Now                ', new Date(results.now)
       console.log 'Should have started', new Date(nowPlayingState.playStart)
       console.log 'Diff', diff
       console.log 'Too little too late'
-      player?.end()
-      player = null
       return
     setTimeout doPlay, diff
     player.on 'end', ->
