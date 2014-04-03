@@ -33,6 +33,7 @@ nowPlayingRef = fireRef.child 'playing'
 eventsHub = new EventEmitter2()
 
 resetNowPlaying = ->
+  # TODO: only erase songId and progress
   nowPlayingRef.set shouldPlay: true
 
 resetIfNeeded = ->
