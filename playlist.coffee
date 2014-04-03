@@ -1,10 +1,12 @@
 # imports
+http = require 'http'
+
 sntp = require 'sntp'
 async = require 'async'
 Firebase = require 'firebase'
 {EventEmitter2} = require 'eventemitter2'
 
-GS = require './grooveshark'
+externalHelper = require './external-helper'
 Player = require './player'
 
 # constant
@@ -147,6 +149,41 @@ module.exports = class Playlist
     @_player.play()
     @_progressInterval = setInterval @trackProgress.bind(@), 990
 
+  lookupSong: (songId, cb) ->
+    song = @_playlist[songId]
+    if song.externalId
+      return cb null, externalId: song.externalId
+    songRef = @_playlistRef.child(songId)
+    origTitle = song.title
+    externalHelper.lookupSong origTitle, (err, info) =>
+      if err
+        console.log "Get info error", err
+        @_cleanPlayer()
+        songRef.update
+          title: "Song not found"
+          origTitle: origTitle
+          completed: true
+          externalId: null
+        # broadcast that we should switch to the next song
+        @_nowPlayingRef.transaction (currentVal) ->
+          if currentVal?.songId != songId
+            return
+          return shouldPlay: true
+        return cb err
+      cb null, info
+      songRef.update
+        title: info.title
+        origTitle: origTitle
+        externalId: info.externalId
+
+  getSongStream: (externalId, cb) ->
+    externalHelper.getStreamingUrl externalId, (err, streamUrl) ->
+      return cb(err) if err
+      request = http.get streamUrl # Getting stream data
+      request.on 'response', (stream) ->
+        cb null, { stream, request }
+      request.on 'error', cb
+
   onPlay: ->
     console.log 'play'
     if not @_nowPlayingState?.shouldPlay
@@ -169,7 +206,8 @@ module.exports = class Playlist
       return
 
     console.log("Got song to play:", song)
-    @_player = new Player(song)
+    @_player = new Player()
+    @_player.setTitle song.title
     @_player.on 'end', =>
       @onSongEnded songId
 
@@ -177,34 +215,10 @@ module.exports = class Playlist
     doPlay = @doPlay.bind(@)
     async.auto
       songData: (cb) =>
-        if song.gsId
-          return cb null, id: song.gsId
-        songRef = @_playlistRef.child(songId)
-        origTitle = @_playlist[songId].title
-        GS.getData origTitle, (err, info) =>
-          if err
-            console.log "Get info error", err
-            @_cleanPlayer()
-            songRef.update
-              detectedTitle: "Song not found"
-              origTitle: origTitle
-              title: null
-              completed: true
-            @_nowPlayingRef.transaction (currentVal) ->
-              if currentVal?.songId != songId
-                return
-              return shouldPlay: true
-            return cb err
-          cb null, info
-          songRef.update
-            detectedTitle: "#{info.artist} - #{info.title}"
-            origTitle: origTitle
-            title: null
-            gsId: info.id
-      stream: ['songData', (cb, results) ->
+        @lookupSong songId, cb
+      stream: ['songData', (cb, results) =>
         info = results.songData
-        GS.getStream info.id, (error, stream, request) ->
-          cb error, { stream, request }
+        @getSongStream info.externalId, cb
       ],
       now: ['stream', currentTime]
     , (err, results) =>
@@ -224,7 +238,7 @@ module.exports = class Playlist
         @resetIfNeeded()
         return
       setTimeout doPlay, diff
-      @_player.setTitle @_playlist[songId]
+      @_player.setTitle results.songData.title or @_playlist[songId].title
       @_player.on 'end', ->
         console.log 'Aborting request'
         results.stream.request.abort()

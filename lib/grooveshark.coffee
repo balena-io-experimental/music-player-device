@@ -1,4 +1,3 @@
-http = require 'http'
 GS = require 'grooveshark-streaming'
 
 # Searching for song_name on Grooveshark
@@ -18,7 +17,7 @@ module.exports.getData = (song, callback) ->
     }
 
 
-module.exports.getStream = (songId, callback) ->
+module.exports.getStreamingUrl = (songId, callback) ->
   console.log "Getting streamUrl."
   GS.Grooveshark.getStreamingUrl songId, (err, streamUrl) ->
     console.log "Got streamUrl '#{streamUrl}.'"
@@ -26,7 +25,4 @@ module.exports.getStream = (songId, callback) ->
       console.log "Error getting stream url.", err
       return callback(err)
 
-    request = http.get streamUrl # Getting stream data
-    request.on 'response', (songStream) ->
-      callback null, songStream, request
-    request.on 'error', callback
+    callback null, streamUrl

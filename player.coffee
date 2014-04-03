@@ -3,15 +3,13 @@ Speaker = require('speaker')
 {EventEmitter2} = require('eventemitter2')
 
 class Player extends EventEmitter2
-  constructor: (song) ->
+  constructor: ->
     super()
     @decoder = new Lame.Decoder()
     @speaker = null
     @ready = false
-    @setTitle song
 
-  setTitle: (song) ->
-    @title = song.detectedTitle or song.title
+  setTitle: (@title) ->
 
   log: (args...) ->
     console.log("'#{@title}':", args...)
