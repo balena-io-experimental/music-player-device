@@ -13,16 +13,17 @@ class Player extends EventEmitter2
   setTitle: (song) ->
     @title = song.detectedTitle or song.title
 
-  log: (args...) -> console.log("'#{@title}':", args...)
+  log: (args...) ->
+    console.log("'#{@title}':", args...)
 
   buffer: (songStream) ->
     @log("Piping to decoder.")
     songStream.pipe(@decoder)
     @log("Piped to decoder.")
 
-    @decoder.on('format', (format) =>
+    @decoder.on 'format', (format) =>
       @speaker = new Speaker(format)
-      @speaker.on('flush', =>
+      @speaker.on 'flush', =>
         @log("Song finished.")
         @playing = null
         @log("Closing songStream.")
@@ -34,10 +35,8 @@ class Player extends EventEmitter2
         @decoder = null
         @log("Closed decoder.")
         @emit('end')
-      )
       @ready = true
       @emit('ready')
-    )
 
   _play:  ->
     @decoder.pipe(@speaker)
