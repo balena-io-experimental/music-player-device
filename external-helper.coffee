@@ -1,4 +1,4 @@
-GS = require './lib/grooveshark'
+GS = require('./lib/grooveshark')
 
 module.exports.lookupSong = (title, cb) ->
   # return object { externalId, title }
@@ -6,10 +6,10 @@ module.exports.lookupSong = (title, cb) ->
     if not err and not info
       err = code: 'not_found'
     if err
-      return cb err
+      return cb(err)
     cb null,
       externalId: info.id
       title: "#{info.artist} - #{info.title}"
 
 module.exports.getStreamingUrl = (externalId, cb) ->
-  GS.getStreamingUrl externalId, cb
+  GS.getStreamingUrl(externalId, cb)

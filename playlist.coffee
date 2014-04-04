@@ -1,17 +1,17 @@
 # imports
-http = require 'http'
+http = require('http')
 
-sntp = require 'sntp'
-async = require 'async'
-Firebase = require 'firebase'
-{EventEmitter2} = require 'eventemitter2'
+sntp = require('sntp')
+async = require('async')
+Firebase = require('firebase')
+{EventEmitter2} = require('eventemitter2')
 
-externalHelper = require './external-helper'
-Player = require './player'
+externalHelper = require('./external-helper')
+Player = require('./player')
 
 # constant
 
-GRACE = 10000 # ms
+{GRACE} = require('./config') # ms
 
 module.exports = class Playlist
   constructor: (fbUrl) ->
