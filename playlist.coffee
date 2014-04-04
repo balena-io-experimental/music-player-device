@@ -24,9 +24,9 @@ module.exports = class Playlist
     @_player = null
 
     # Firebase refs
-    fireRef = new Firebase fbUrl
-    @_playlistRef = fireRef.child 'playlist'
-    @_nowPlayingRef = fireRef.child 'playing'
+    fireRef = new Firebase(fbUrl)
+    @_playlistRef = fireRef.child('playlist')
+    @_nowPlayingRef = fireRef.child('playing')
 
     # events routing
     @_eventsHub = new EventEmitter2()
@@ -44,16 +44,14 @@ module.exports = class Playlist
   currentTime: (cb) ->
     sntp.time (err, time) ->
       if err
-        cb null, Date.now()
+        cb(null, Date.now())
         console.error "SNTP Error", err
         return
-      cb null, Date.now() + time.t
+      cb(null, Date.now() + time.t)
 
 
   resetNowPlaying: ->
-    # TODO: only erase songId and progress
     @_nowPlayingRef.update
-      #shouldPlay: true
       songId: null
       progress: null
 
@@ -81,29 +79,29 @@ module.exports = class Playlist
       @resetIfNeeded()
 
     # don't do anything until we get all data
-    # TODO: check how empty list is shown
+    # TODO: check how empty list is returned
     if not @_playlist
       return
 
     switchToStop = not @_nowPlayingState?.shouldPlay
     if switchToStop
-      return @_eventsHub.emit 'stop'
+      return @_eventsHub.emit('stop')
 
     switchToStart = @_prevNowPlayingState?.shouldPlay == false and @_nowPlayingState?.shouldPlay
     if switchToStart
-      return @_eventsHub.emit 'play_next'
+      return @_eventsHub.emit('play_next')
 
     nobodyPlaying = not @_nowPlayingState?.songId and @_nowPlayingState?.shouldPlay
     if nobodyPlaying
-      return @_eventsHub.emit 'play_next'
+      return @_eventsHub.emit('play_next')
 
     songEnded = @_prevNowPlayingState?.songId and not @_nowPlayingState?.songId
     if songEnded and @_nowPlayingState?.shouldPlay
-      return @_eventsHub.emit 'play_next'
+      return @_eventsHub.emit('play_next')
 
     newSong = not @_prevNowPlayingState?.songId and @_nowPlayingState?.songId
     if newSong and @_nowPlayingState?.shouldPlay
-      return @_eventsHub.emit 'play'
+      return @_eventsHub.emit('play')
 
 
   _onPlaylistChanged: (snapshot) ->
@@ -122,17 +120,17 @@ module.exports = class Playlist
     if not playStart
       return
     now = sntp.now()
-    progress = Math.floor (now - playStart) / 1000
-    @_nowPlayingRef.child('progress').set progress
+    progress = Math.floor((now - playStart) / 1000)
+    @_nowPlayingRef.child('progress').set(progress)
 
   _cleanPlayer: ->
     @_player?.end()
     @_player = null
 
   onSongEnded: (songId) ->
-    clearInterval @_progressInterval
+    clearInterval(@_progressInterval)
     songRef = @_playlistRef.child(songId)
-    songRef.child('completed').set true
+    songRef.child('completed').set(true)
     @_cleanPlayer()
     @_nowPlayingRef.transaction (currentVal) ->
       if currentVal?.songId != songId
@@ -147,12 +145,14 @@ module.exports = class Playlist
 
   doPlay: ->
     @_player.play()
-    @_progressInterval = setInterval @trackProgress.bind(@), 990
+    @_progressInterval = setInterval(
+      @trackProgress.bind(@),
+    500)
 
   lookupSong: (songId, cb) ->
     song = @_playlist[songId]
     if song.externalId
-      return cb null, externalId: song.externalId
+      return cb(null, externalId: song.externalId)
     songRef = @_playlistRef.child(songId)
     origTitle = song.title
     externalHelper.lookupSong origTitle, (err, info) =>
@@ -170,7 +170,7 @@ module.exports = class Playlist
             return
           return shouldPlay: true
         return cb err
-      cb null, info
+      cb(null, info)
       songRef.update
         title: info.title
         origTitle: origTitle
@@ -179,73 +179,73 @@ module.exports = class Playlist
   getSongStream: (externalId, cb) ->
     externalHelper.getStreamingUrl externalId, (err, streamUrl) ->
       return cb(err) if err
-      request = http.get streamUrl # Getting stream data
+      request = http.get(streamUrl) # Getting stream data
       request.on 'response', (stream) ->
-        cb null, { stream, request }
+        cb(null, { stream, request })
       request.on 'error', cb
 
   onPlay: ->
     console.log 'play'
     if not @_nowPlayingState?.shouldPlay
-      console.log 'shouldPlay == false'
+      console.log('shouldPlay == false')
       return
 
     if @_player # already playing
-      console.log 'Already playing'
+      console.log('Already playing')
       return
 
     songId = @_nowPlayingState.songId
     song = @_playlist?[songId]
     if not song
-      console.log 'Song not found, id:', songId
+      console.log('Song not found, id:', songId)
       @resetNowPlaying()
       return
 
     if song.completed
-      console.log 'Already completed, skip'
+      console.log('Already completed, skip')
       return
 
     console.log("Got song to play:", song)
     @_player = new Player()
-    @_player.setTitle song.title
+    @_player.setTitle(song.title)
     @_player.on 'end', =>
-      @onSongEnded songId
+      @onSongEnded(songId)
 
     currentTime = @currentTime.bind(@)
     doPlay = @doPlay.bind(@)
     async.auto
       songData: (cb) =>
-        @lookupSong songId, cb
+        @lookupSong(songId, cb)
       stream: ['songData', (cb, results) =>
         info = results.songData
-        @getSongStream info.externalId, cb
+        @getSongStream(info.externalId, cb)
       ],
       now: ['stream', currentTime]
     , (err, results) =>
       if err
-        console.error err
+        console.error(err)
         return
       if not @_player
-        console.log 'Player disappeared?'
+        console.log('Player disappeared?')
         return
       diff = @_nowPlayingState.playStart - results.now
       if diff <= 0
         @_cleanPlayer()
-        console.log 'Now                ', new Date(results.now)
-        console.log 'Should have started', new Date(@_nowPlayingState.playStart)
-        console.log 'Diff', diff
-        console.log 'Too little too late'
+        console.log('Now                ', new Date(results.now))
+        console.log('Should have started', new Date(@_nowPlayingState.playStart))
+        console.log('Diff', diff)
+        console.log('Too little too late')
         @resetIfNeeded()
         return
-      setTimeout doPlay, diff
-      @_player.setTitle results.songData.title or @_playlist[songId].title
+      setTimeout(doPlay, diff)
+      @_player.setTitle(results.songData.title or @_playlist[songId].title)
       @_player.on 'end', ->
-        console.log 'Aborting request'
+        console.log('Aborting request')
         results.stream.request.abort()
-      @_player.buffer results.stream.stream
+      @_player.buffer(results.stream.stream)
 
   onPlayNext: ->
-    console.log 'play_next'
+    console.log('play_next')
     if not @_nowPlayingState?.shouldPlay
       return
     nextSongId = null
@@ -257,7 +257,7 @@ module.exports = class Playlist
       return
     @currentTime (err, now) =>
       if err
-        console.log err
+        console.log(err)
         return
       playStart = now + GRACE
       @_nowPlayingRef.transaction (currentVal) ->
@@ -272,8 +272,8 @@ module.exports = class Playlist
         }
 
   onStop: ->
-    console.log 'Stop playing'
+    console.log('stop')
     @_cleanPlayer()
     songId = @_nowPlayingState?.songId
     if songId
-      @onSongEnded songId
+      @onSongEnded(songId)
