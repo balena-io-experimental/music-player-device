@@ -211,8 +211,7 @@ module.exports = class Playlist
       stream: ['songData', (cb, results) =>
         info = results.songData
         @getSongStream(info.externalId, cb)
-      ],
-      now: ['stream', currentTime]
+      ]
     , (err, results) =>
       if err
         console.error(err)
@@ -220,7 +219,7 @@ module.exports = class Playlist
       if not @_player
         console.log('Player disappeared?')
         return
-      diff = @_nowPlayingState.playStart - results.now
+      diff = @_nowPlayingState.playStart - currentTimeSync() #results.now
       if diff <= 0
         #@_cleanPlayer()
         #console.log('Now                ', new Date(results.now))
@@ -249,21 +248,22 @@ module.exports = class Playlist
         break
     if not nextSongId
       return
-    currentTime (err, now) =>
+    now = currentTimeSync()
+    ###currentTime (err, now) =>
       if err
         console.log(err)
+        return###
+    playStart = now + GRACE
+    @_nowPlayingRef.transaction (currentVal) ->
+      if currentVal?.songId
         return
-      playStart = now + GRACE
-      @_nowPlayingRef.transaction (currentVal) ->
-        if currentVal?.songId
-          return
-        if not currentVal?.shouldPlay
-          return
-        return {
-          shouldPlay: true
-          songId: nextSongId
-          playStart: playStart
-        }
+      if not currentVal?.shouldPlay
+        return
+      return {
+        shouldPlay: true
+        songId: nextSongId
+        playStart: playStart
+      }
 
   onStop: ->
     console.log('stop')

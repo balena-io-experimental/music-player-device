@@ -1,6 +1,9 @@
 sntp = require('sntp')
 through = require('through')
 
+module.exports.startSntp = (cb) ->
+  sntp.start(clockSyncRefresh: 5 * 60 * 1000, cb)
+
 module.exports.currentTime = (cb) ->
   sntp.time (err, time) ->
     if err
@@ -11,8 +14,7 @@ module.exports.currentTime = (cb) ->
 
 module.exports.currentTimeSync = currentTimeSync = ->
   sntp.now()
-
-
+  
 module.exports.timeKeeper = (start) ->
   CHANNELS = 2
   BIT_DEPTH = 16
