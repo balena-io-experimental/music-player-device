@@ -17,6 +17,7 @@ module.exports = class Playlist
   constructor: (fbUrl) ->
 
     # state
+    @_playlistReceived = false
     @_playlist = null
     @_prevNowPlayingState = null
     @_nowPlayingState = null
@@ -70,14 +71,13 @@ module.exports = class Playlist
     if not @_prevNowPlayingState
       @resetIfNeeded()
 
-    # don't do anything until we get all data
-    # TODO: check how empty list is returned
-    if not @_playlist
-      return
-
     switchToStop = not @_nowPlayingState?.shouldPlay
     if switchToStop
       return @_eventsHub.emit('stop')
+
+    # don't do any playback until we get all data
+    if not @_playlistReceived
+      return
 
     switchToStart = @_prevNowPlayingState?.shouldPlay == false and @_nowPlayingState?.shouldPlay
     if switchToStart
@@ -97,6 +97,7 @@ module.exports = class Playlist
 
 
   _onPlaylistChanged: (snapshot) ->
+    @_playlistReceived = true
     @_playlist = snapshot.val()
     @_onStateChanged()
 
@@ -137,7 +138,6 @@ module.exports = class Playlist
 
   doPlay: ->
     @_player.play(@_nowPlayingState.playStart)
-    # TODO: fix time for stop / resume scenario (device goes offline and back online)
     @_progressInterval = setInterval =>
       @trackProgress()
     , 500
@@ -219,15 +219,8 @@ module.exports = class Playlist
       if not @_player
         console.log('Player disappeared?')
         return
-      diff = @_nowPlayingState.playStart - currentTimeSync() #results.now
+      diff = @_nowPlayingState.playStart - currentTimeSync()
       if diff <= 0
-        #@_cleanPlayer()
-        #console.log('Now                ', new Date(results.now))
-        #console.log('Should have started', new Date(@_nowPlayingState.playStart))
-        #console.log('Diff', diff)
-        #console.log('Too little too late')
-        #@resetIfNeeded()
-        #return
         setImmediate(doPlay)
       else
         setTimeout(doPlay, diff)
