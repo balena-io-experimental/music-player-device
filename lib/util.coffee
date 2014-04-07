@@ -32,9 +32,6 @@ module.exports.timeKeeper = (start) ->
     # Initialise start at the first chunk of data
     start or= now
 
-    console.log 'START', new Date(start)
-    console.log 'NOW  ', new Date(now)
-
     # Derive the bytes that should have been processed if there was no time skew
     idealBytes = (now - start) * BYTE_PER_MSEC
 
