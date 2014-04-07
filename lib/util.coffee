@@ -1,5 +1,5 @@
 sntp = require('sntp')
-through2 = require('through2')
+through = require('through')
 
 module.exports.currentTime = (cb) ->
   sntp.time (err, time) ->
@@ -27,7 +27,7 @@ module.exports.timeKeeper = (start) ->
   actualBytes = 0
 
   # The actual stream processing function
-  return through2 (chunk, enc, callback) ->
+  return through (chunk) ->
     now = currentTimeSync()
     # Initialise start at the first chunk of data
     start or= now
@@ -54,7 +54,7 @@ module.exports.timeKeeper = (start) ->
       correctedChunk.fill(0)
       chunk.copy(correctedChunk)
 
-    @push(correctedChunk)
-    callback()
+    @emit('data', correctedChunk)
+    #callback()
 
     actualBytes += chunk.length
