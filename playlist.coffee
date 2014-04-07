@@ -222,14 +222,14 @@ module.exports = class Playlist
         return
       diff = @_nowPlayingState.playStart - results.now
       if diff <= 0
-        @_cleanPlayer()
-        console.log('Now                ', new Date(results.now))
-        console.log('Should have started', new Date(@_nowPlayingState.playStart))
-        console.log('Diff', diff)
-        console.log('Too little too late')
-        @resetIfNeeded()
-        return
-        #setImmediate(doPlay)
+        #@_cleanPlayer()
+        #console.log('Now                ', new Date(results.now))
+        #console.log('Should have started', new Date(@_nowPlayingState.playStart))
+        #console.log('Diff', diff)
+        #console.log('Too little too late')
+        #@resetIfNeeded()
+        #return
+        setImmediate(doPlay)
       else
         setTimeout(doPlay, diff)
       @_player.setTitle(results.songData.title)
