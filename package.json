@@ -11,7 +11,8 @@
     "lodash": "^2.4.1",
     "request": "^2.34.0",
     "sntp": "^1.0.3",
-    "speaker": "0.0.10"
+    "speaker": "0.0.10",
+    "through2": "^0.4.1"
   },
   "devDependencies": {},
   "scripts": {

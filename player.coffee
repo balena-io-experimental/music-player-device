@@ -2,11 +2,14 @@ Lame = require('lame')
 Speaker = require('speaker')
 {EventEmitter2} = require('eventemitter2')
 
+{currentTimeSync, timeKeeper} = require('./lib/util')
+
 class Player extends EventEmitter2
   constructor: ->
     super()
     @decoder = new Lame.Decoder()
     @speaker = null
+    @timeKeeper = null
     @ready = false
 
   setTitle: (@title) ->
@@ -37,10 +40,15 @@ class Player extends EventEmitter2
       @emit('ready')
 
   _play:  ->
-    @decoder.pipe(@speaker)
+    @decoder.pipe(@timeKeeper).pipe(@speaker)
     @emit('playing')
 
-  play: ->
+  play: (startTime) ->
+    if startTime
+      @startTime = startTime
+    if not @startTime
+      @startTime = currentTimeSync()
+    @timeKeeper = timeKeeper(@startTime)
     @log('Playing')
     if @ready
       @_play()
@@ -50,7 +58,7 @@ class Player extends EventEmitter2
   pause: ->
     @log('Pausing')
     @off('ready', @_play)
-    @decoder?.unpipe(@speaker)
+    @decoder?.unpipe()
     @emit('paused')
 
   end: ->

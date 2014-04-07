@@ -1,13 +1,13 @@
 # imports
 http = require('http')
 
-sntp = require('sntp')
 async = require('async')
 Firebase = require('firebase')
 {EventEmitter2} = require('eventemitter2')
 
 externalHelper = require('./external-helper')
 Player = require('./player')
+{currentTime, currentTimeSync} = require('./lib/util')
 
 # constant
 
@@ -40,14 +40,6 @@ module.exports = class Playlist
     @_eventsHub.on 'stop', @onStop.bind(@)
     @_eventsHub.on 'play_next', @onPlayNext.bind(@)
     @_eventsHub.on 'play', @onPlay.bind(@)
-
-  currentTime: (cb) ->
-    sntp.time (err, time) ->
-      if err
-        cb(null, Date.now())
-        console.error "SNTP Error", err
-        return
-      cb(null, Date.now() + time.t)
 
 
   resetNowPlaying: ->
@@ -119,7 +111,7 @@ module.exports = class Playlist
     playStart = @_nowPlayingState?.playStart
     if not playStart
       return
-    now = sntp.now()
+    now = currentTimeSync()
     progress = Math.floor((now - playStart) / 1000)
     @_nowPlayingRef.child('progress').set(progress)
 
@@ -144,15 +136,16 @@ module.exports = class Playlist
       }
 
   doPlay: ->
-    @_player.play()
-    @_progressInterval = setInterval(
-      @trackProgress.bind(@),
-    500)
+    @_player.play(@_nowPlayingState.playStart)
+    # TODO: fix time for stop / resume scenario (device goes offline and back online)
+    @_progressInterval = setInterval =>
+      @trackProgress()
+    , 500
 
   lookupSong: (songId, cb) ->
     song = @_playlist[songId]
     if song.externalId
-      return cb(null, externalId: song.externalId)
+      return cb(null, song)
     songRef = @_playlistRef.child(songId)
     origTitle = song.title
     externalHelper.lookupSong origTitle, (err, info) =>
@@ -211,7 +204,6 @@ module.exports = class Playlist
     @_player.on 'end', =>
       @onSongEnded(songId)
 
-    currentTime = @currentTime.bind(@)
     doPlay = @doPlay.bind(@)
     async.auto
       songData: (cb) =>
@@ -237,8 +229,10 @@ module.exports = class Playlist
         console.log('Too little too late')
         @resetIfNeeded()
         return
-      setTimeout(doPlay, diff)
-      @_player.setTitle(results.songData.title or @_playlist[songId].title)
+        #setImmediate(doPlay)
+      else
+        setTimeout(doPlay, diff)
+      @_player.setTitle(results.songData.title)
       @_player.on 'end', ->
         console.log('Aborting request')
         results.stream.request.abort()
@@ -255,7 +249,7 @@ module.exports = class Playlist
         break
     if not nextSongId
       return
-    @currentTime (err, now) =>
+    currentTime (err, now) =>
       if err
         console.log(err)
         return
