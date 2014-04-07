@@ -28,11 +28,11 @@ class Player extends EventEmitter2
         @log("Song finished.")
         @playing = null
         @log("Closing songStream.")
-        songStream?.unpipe(@decoder)
+        songStream?.unpipe()
         songStream = null
         @log("Closed songStream.")
         @log("Closing decoder.")
-        @decoder?.unpipe(@speaker)
+        @decoder?.unpipe()
         @decoder = null
         @log("Closed decoder.")
         @emit('end')
