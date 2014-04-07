@@ -40,7 +40,9 @@ class Player extends EventEmitter2
       @emit('ready')
 
   _play:  ->
-    @decoder.pipe(@timeKeeper).pipe(@speaker)
+    @decoder
+      #.pipe(@timeKeeper)
+      .pipe(@speaker)
     @emit('playing')
 
   play: (startTime) ->
