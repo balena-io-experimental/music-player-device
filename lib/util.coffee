@@ -17,17 +17,16 @@ module.exports.currentTime = (cb) ->
 module.exports.currentTimeSync = currentTimeSync = ->
   sntp.now()
 
-module.exports.timeKeeper = (start) ->
-  CHANNELS = 2
-  BIT_DEPTH = 16
-  RATE = 44100
-  BYTE_PER_SEC = RATE * BIT_DEPTH / 8 * CHANNELS
-  BYTE_PER_MSEC = BYTE_PER_SEC / 1000
-  # Maximum accepted deviation from ideal timing
-  EPSILON_MS = 20
+CHANNELS = 2
+BIT_DEPTH = 16
+RATE = 44100
+BYTE_PER_SEC = RATE * BIT_DEPTH / 8 * CHANNELS
+BYTE_PER_MSEC = BYTE_PER_SEC / 1000
+# Maximum accepted deviation from ideal timing
+EPSILON_MS = 20
 
+module.exports.timeKeeper = (start) ->
   # State variables
-  #start = null
   actualBytes = 0
 
   # The actual stream processing function
