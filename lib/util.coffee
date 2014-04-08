@@ -1,6 +1,7 @@
 sntp = require('sntp')
 through = require('through')
 Throttle = require('throttle')
+stream = require('stream')
 
 module.exports.startSntp = (cb) ->
   sntp.start(clockSyncRefresh: 5 * 60 * 1000, cb)
@@ -16,22 +17,17 @@ module.exports.currentTime = (cb) ->
 module.exports.currentTimeSync = currentTimeSync = ->
   sntp.now()
 
+module.exports.timeKeeper = (start) ->
+  CHANNELS = 2
+  BIT_DEPTH = 16
+  RATE = 44100
+  BYTE_PER_SEC = RATE * BIT_DEPTH / 8 * CHANNELS
+  BYTE_PER_MSEC = BYTE_PER_SEC / 1000
+  # Maximum accepted deviation from ideal timing
+  EPSILON_MS = 20
 
-CHANNELS = 2
-BIT_DEPTH = 16
-FRAME_SIZE = BIT_DEPTH / 8 * CHANNELS
-RATE = 44100
-BYTE_PER_SEC = RATE * FRAME_SIZE
-BYTE_PER_MSEC = RATE / 1000
-# Maximum accepted deviation from ideal timing
-EPSILON_MS = 20
-EPSILON_BYTES = EPSILON_MS * BYTE_PER_MSEC
-
-module.exports.throttle = ->
-  new Throttle(BYTE_PER_SEC)
-
-module.exports.skipStart = (start) ->
   # State variables
+  #start = null
   actualBytes = 0
 
   # The actual stream processing function
@@ -40,21 +36,29 @@ module.exports.skipStart = (start) ->
     # Initialise start at the first chunk of data
     start or= now
 
-    chunkLength = chunk.length
     # Derive the bytes that should have been processed if there was no time skew
     idealBytes = (now - start) * BYTE_PER_MSEC
 
     diffBytes = actualBytes - idealBytes
-    #diffMsec = diffBytes / BYTE_PER_MSEC
-    #console.log('Time deviation:', diffMsec.toFixed(2) + 'ms')
 
-    # Only correct the stream if we're too slow (skip song beginning if we are late)
-    if diffBytes < -EPSILON_BYTES
+    diffMsec = diffBytes / BYTE_PER_MSEC
+    console.log('Time deviation:', diffMsec.toFixed(2) + 'ms')
+
+    # Only correct the stream if we're out of the EPSILON region
+    if Math.abs(diffMsec) < EPSILON_MS
+      correctedChunk = chunk
+    else
       console.log('Epsilon exceeded! correcting')
-      # The buffer size should be a multiple of FRAME_SIZE
-      diffBytes *= -1
-      diffBytes -= diffBytes % FRAME_SIZE
-      chunk = chunk.slice(diffBytes)
+      #MAX_ALLOWED = 1/20
+      #if diffBytes > chunk.length * MAX_ALLOWED
+      #    diffBytes = chunk.length * MAX_ALLOWED
+      # The buffer size should be a multiple of 4
+      diffBytes = diffBytes - (diffBytes % 4)
+      correctedChunk = new Buffer(chunk.length + diffBytes)
+      correctedChunk.fill(0)
+      chunk.copy(correctedChunk)
 
-    @queue(chunk)
-    actualBytes += chunkLength
+    @emit('data', correctedChunk)
+    #callback()
+
+    actualBytes += chunk.length
