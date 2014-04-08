@@ -2,7 +2,7 @@ Lame = require('lame')
 Speaker = require('speaker')
 {EventEmitter2} = require('eventemitter2')
 
-{currentTimeSync, timeKeeper} = require('./lib/util')
+{currentTimeSync, skipStart, throttle} = require('./lib/util')
 
 class Player extends EventEmitter2
   constructor: ->
@@ -41,7 +41,8 @@ class Player extends EventEmitter2
 
   _play:  ->
     @decoder
-      .pipe(@timeKeeper)
+      .pipe(@skipStart)
+      .pipe(@throttle)
       .pipe(@speaker)
     @emit('playing')
 
@@ -50,7 +51,8 @@ class Player extends EventEmitter2
       @startTime = startTime
     if not @startTime
       @startTime = currentTimeSync()
-    @timeKeeper = timeKeeper(@startTime)
+    @skipStart = skipStart(@startTime)
+    @throttle = throttle()
     @log('Playing')
     if @ready
       @_play()

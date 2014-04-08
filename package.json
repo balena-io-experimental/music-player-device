@@ -12,6 +12,7 @@
     "request": "^2.34.0",
     "sntp": "^1.0.3",
     "speaker": "0.0.10",
+    "throttle": "^1.0.3",
     "through": "^2.3.4",
     "through2": "^0.4.1"
   },
