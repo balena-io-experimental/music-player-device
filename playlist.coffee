@@ -219,16 +219,16 @@ module.exports = class Playlist
       if not @_player
         console.log('Player disappeared?')
         return
-      diff = @_nowPlayingState.playStart - currentTimeSync()
-      if diff <= 0
-        setImmediate(doPlay)
-      else
-        setTimeout(doPlay, diff)
       @_player.setTitle(results.songData.title)
       @_player.on 'end', ->
         console.log('Aborting request')
         results.stream.request.abort()
       @_player.buffer(results.stream.stream)
+      diff = @_nowPlayingState.playStart - currentTimeSync()
+      if diff <= 0
+        setImmediate(doPlay)
+      else
+        setTimeout(doPlay, diff)
 
   onPlayNext: ->
     console.log('play_next')
