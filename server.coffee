@@ -57,6 +57,7 @@ commands =
 # Getting the user timeline
 watchTwitter = ->
 	twitter.stream('user', {}, (timeline) ->
+		console.log('Got user timeline', timeline)
 		timeline.on('data', (tweet) ->
 			return if tweet.text is undefined # Not a tweet
 
