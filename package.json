@@ -5,6 +5,7 @@
     "async": "~0.2.10",
     "coffee-script": "1.7.1",
     "eventemitter2": "~0.4.12",
+    "firebase": "^1.0.18",
     "grooveshark-streaming": "~0.0.3",
     "lame": "~1.0.3",
     "ntwitter": "~0.5.0",
