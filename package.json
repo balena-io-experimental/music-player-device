@@ -14,7 +14,7 @@
     "speaker": "0.0.10"
   },
   "scripts": {
-    "start": "node index.js",
+    "start": "coffee server.coffee",
     "preinstall": "bash deps.sh"
   }
 }
