@@ -3,6 +3,7 @@ Speaker = require('speaker')
 { EventEmitter2 } = require('eventemitter2')
 
 { currentTimeSync, timeKeeper } = require('./lib/util')
+config = require('./config')
 
 class Player extends EventEmitter2
 	constructor: ->
@@ -23,6 +24,9 @@ class Player extends EventEmitter2
 		@log("Piped to decoder.")
 
 		@decoder.on 'format', (format) =>
+			# Share with all components.
+			config.format = format
+
 			@speaker = new Speaker(format)
 			@speaker.on 'flush', =>
 				@log("Song finished.")

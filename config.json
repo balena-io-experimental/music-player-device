@@ -1,4 +1,5 @@
 {
-  "FIREBASE_URL": "https://vocalist.firebaseio.com",
-  "GRACE": 10000
+	"FIREBASE_URL": "https://vocalist.firebaseio.com",
+	"GRACE": 10000,
+	"format": null
 }
