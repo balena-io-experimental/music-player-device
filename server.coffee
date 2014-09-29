@@ -1,6 +1,6 @@
-{FIREBASE_URL} = require('./config')
+{ FIREBASE_URL } = require('./config')
 Playlist = require('./playlist')
-{startSntp} = require('./lib/util')
+{ startSntp } = require('./lib/util')
 
 # run
 startSntp ->

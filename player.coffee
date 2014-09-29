@@ -1,8 +1,8 @@
 Lame = require('lame')
 Speaker = require('speaker')
-{EventEmitter2} = require('eventemitter2')
+{ EventEmitter2 } = require('eventemitter2')
 
-{currentTimeSync, timeKeeper} = require('./lib/util')
+{ currentTimeSync, timeKeeper } = require('./lib/util')
 
 class Player extends EventEmitter2
 	constructor: ->
