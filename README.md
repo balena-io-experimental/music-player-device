@@ -1,6 +1,6 @@
 # Music Player
 
-This project is a [Resin.io][resin]-supercharged project for playing a playlist on Resin-supported devices, each of which are synchronised to each other.
+This project is a [Resin.io][resin]-supercharged project for playing a playlist on Resin-supported devices, *synchronised* to one another.
 
 The project currently uses [Grooveshark][grooveshark] to stream music specified in a separate [frontend application][frontend-code].
 
