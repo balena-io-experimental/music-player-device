@@ -1,4 +1,5 @@
 {
+	"debugMode": false,
 	"firebaseUrl": "https://vocalist.firebaseio.com",
 	"grace": 10000,
 	"maxSkew": 200

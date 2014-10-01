@@ -50,6 +50,10 @@ module.exports = {
 			diffBytes = actualBytes - idealBytes
 			diffBytes -= diffBytes % 4 # Buffer is 4-byte aligned.
 
+			if config.debugMode
+				diffMs = diffBytes / bytesPerMs
+				console.log("Delta: #{diffBytes} (#{diffMs.toFixed(2)}ms.)")
+
 			if -maxSkewBytes < diffBytes < maxSkewBytes
 				correctedChunk = chunk
 			else
