@@ -3,7 +3,8 @@ Lame = require 'lame'
 Speaker = require 'speaker'
 
 config = require './config'
-{ currentTimeSync, timeKeeper } = require './util'
+skewCorrection = require './skew-correction'
+{ currentTimeSync } = require './util'
 
 module.exports = class extends EventEmitter2
 	constructor: ->
@@ -12,7 +13,7 @@ module.exports = class extends EventEmitter2
 		@decoder = new Lame.Decoder()
 		@ready = false
 		@speaker = null
-		@timeKeeper = null
+		@skewCorrection = null
 
 	setTitle: (@title) ->
 
@@ -25,7 +26,7 @@ module.exports = class extends EventEmitter2
 		@log('Piped to decoder.')
 
 		@decoder.on 'format', (@format) =>
-			@speaker = new Speaker(format)
+			@speaker = new Speaker(@format)
 			@speaker.on 'flush', =>
 				@log('Song finished.')
 				@playing = null
@@ -43,13 +44,13 @@ module.exports = class extends EventEmitter2
 
 	_play:	->
 		@decoder
-			.pipe(@timeKeeper)
+			.pipe(@skewCorrection)
 			.pipe(@speaker)
 		@emit('playing')
 
 	play: (startTime) ->
 		@startTime = startTime ? currentTimeSync()
-		@timeKeeper = timeKeeper(@startTime, @format)
+		@skewCorrection = skewCorrection(@startTime, @format)
 		@log('Playing')
 
 		if @ready

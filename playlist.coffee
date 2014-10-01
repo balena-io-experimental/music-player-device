@@ -3,7 +3,7 @@ async = require 'async'
 http = require 'http'
 Firebase = require 'firebase'
 
-{ grace } = require './config'
+config = require './config'
 grooveshark = require './grooveshark'
 Player = require './player'
 { currentTimeSync } = require './util'
@@ -228,7 +228,7 @@ module.exports = class Playlist
 		return if not nextSongId
 
 		now = currentTimeSync()
-		playStart = now + grace #ms
+		playStart = now + config.grace #ms
 
 		@_nowPlayingRef.transaction (currentVal) ->
 			return if currentVal?.songId or not currentVal?.shouldPlay
