@@ -1,8 +1,10 @@
-{ firebaseUrl } = require './config'
+config = require './config'
 Playlist = require './playlist'
-{ startSntp } = require './util'
+util = require './util'
 
-startSntp ->
-	new Playlist(firebaseUrl)
+util.readConfigEnvVars()
+
+util.startSntp ->
+	new Playlist(config.firebaseUrl)
 
 	console.log 'Running'
