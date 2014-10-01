@@ -24,11 +24,7 @@ module.exports = class extends EventEmitter2
 		songStream.pipe(@decoder)
 		@log('Piped to decoder.')
 
-		@decoder.on 'format', (format) =>
-			# Save format of current song.
-			# TODO: Expose as property and use that instead.
-			config.format = format
-
+		@decoder.on 'format', (@format) =>
 			@speaker = new Speaker(format)
 			@speaker.on 'flush', =>
 				@log('Song finished.')
@@ -53,7 +49,7 @@ module.exports = class extends EventEmitter2
 
 	play: (startTime) ->
 		@startTime = startTime ? currentTimeSync()
-		@timeKeeper = timeKeeper(@startTime)
+		@timeKeeper = timeKeeper(@startTime, @format)
 		@log('Playing')
 
 		if @ready
