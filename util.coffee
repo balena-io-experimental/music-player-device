@@ -15,17 +15,12 @@ module.exports = {
 		# Refresh clock sync every 5 minutes.
 		sntp.start(clockSyncRefresh: 5 * 60 * 1000, callback)
 
-	timeKeeper: ->
-		start = null
-
+	timeKeeper: (start) ->
 		actualBytes = 0
 
 		return through (chunk) ->
 			# Note: Javscript dates are expressed in *ms* since epoch.
 			now = currentTimeSync()
-
-			# Initialise start the at the first chunk of data.
-			start ?= now
 
 			# Determine bytes of PCM data per ms of music.
 			{ bitDepth, channels, sampleRate } = config.format
