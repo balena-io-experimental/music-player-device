@@ -1,17 +1,14 @@
-# imports
 http = require('http')
 
 async = require('async')
 Firebase = require('firebase')
-{EventEmitter2} = require('eventemitter2')
+{ EventEmitter2 } = require('eventemitter2')
 
 externalHelper = require('./external-helper')
 Player = require('./player')
-{currentTime, currentTimeSync} = require('./lib/util')
+{ currentTime, currentTimeSync } = require('./util')
 
-# constant
-
-{GRACE} = require('./config') # ms
+{ GRACE } = require('./config') # ms
 
 module.exports = class Playlist
 	constructor: (fbUrl) ->
@@ -41,7 +38,6 @@ module.exports = class Playlist
 		@_eventsHub.on 'stop', @onStop.bind(@)
 		@_eventsHub.on 'play_next', @onPlayNext.bind(@)
 		@_eventsHub.on 'play', @onPlay.bind(@)
-
 
 	resetNowPlaying: ->
 		@_nowPlayingRef.update
@@ -242,10 +238,6 @@ module.exports = class Playlist
 		if not nextSongId
 			return
 		now = currentTimeSync()
-		###currentTime (err, now) =>
-			if err
-				console.log(err)
-				return###
 		playStart = now + GRACE
 		@_nowPlayingRef.transaction (currentVal) ->
 			if currentVal?.songId

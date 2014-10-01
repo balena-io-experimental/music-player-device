@@ -1,4 +1,4 @@
-GS = require('./lib/grooveshark')
+GS = require('./grooveshark')
 
 module.exports.lookupSong = (title, cb) ->
 	# return object { externalId, title }

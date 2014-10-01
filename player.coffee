@@ -2,7 +2,7 @@ Lame = require('lame')
 Speaker = require('speaker')
 { EventEmitter2 } = require('eventemitter2')
 
-{ currentTimeSync, timeKeeper } = require('./lib/util')
+{ currentTimeSync, timeKeeper } = require('./util')
 config = require('./config')
 
 class Player extends EventEmitter2

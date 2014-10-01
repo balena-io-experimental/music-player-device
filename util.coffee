@@ -3,7 +3,7 @@ through = require('through')
 Throttle = require('throttle')
 stream = require('stream')
 
-config = require('../config')
+config = require('./config')
 
 module.exports.startSntp = (cb) ->
 	sntp.start(clockSyncRefresh: 5 * 60 * 1000, cb)
