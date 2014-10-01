@@ -1,19 +1,16 @@
-http = require('http')
+async = require 'async'
+{ EventEmitter2 } = require 'eventemitter2'
+http = require 'http'
+Firebase = require 'firebase'
 
-async = require('async')
-Firebase = require('firebase')
-{ EventEmitter2 } = require('eventemitter2')
-
-externalHelper = require('./external-helper')
-Player = require('./player')
-{ currentTime, currentTimeSync } = require('./util')
-
-{ GRACE } = require('./config') # ms
+{ grace } = require './config'
+grooveshark = require './grooveshark'
+Player = require './player'
+{ currentTimeSync } = require './util'
 
 module.exports = class Playlist
-	constructor: (fbUrl) ->
-
-		# state
+	constructor: (firebaseUrl) ->
+		# State.
 		@_playlistReceived = false
 		@_playlist = null
 		@_prevNowPlayingState = null
@@ -21,23 +18,22 @@ module.exports = class Playlist
 		@_progressInterval = null
 		@_player = null
 
-		# Firebase refs
-		fireRef = new Firebase(fbUrl)
+		# Firebase references.
+		fireRef = new Firebase(firebaseUrl)
 		@_playlistRef = fireRef.child('playlist')
 		@_nowPlayingRef = fireRef.child('playing')
 
-		# events routing
+		# Event routing.
 		@_eventsHub = new EventEmitter2()
 
-		# subscribe to FB changes
-		@_playlistRef.on 'value', @_onPlaylistChanged.bind(@)
-		@_nowPlayingRef.on 'value', @_onNowPlayingChanged.bind(@)
+		# Subscribe to firebase changes.
+		@_playlistRef.on('value', @_onPlaylistChanged.bind(@))
+		@_nowPlayingRef.on('value', @_onNowPlayingChanged.bind(@))
 
-		# subscribe to events
-
-		@_eventsHub.on 'stop', @onStop.bind(@)
-		@_eventsHub.on 'play_next', @onPlayNext.bind(@)
-		@_eventsHub.on 'play', @onPlay.bind(@)
+		# Subscribe to events.
+		@_eventsHub.on('stop', @onStop.bind(@))
+		@_eventsHub.on('play_next', @onPlayNext.bind(@))
+		@_eventsHub.on('play', @onPlay.bind(@))
 
 	resetNowPlaying: ->
 		@_nowPlayingRef.update
@@ -46,42 +42,41 @@ module.exports = class Playlist
 
 	resetIfNeeded: ->
 		initialNowPlayingState = @_nowPlayingState
+
 		setTimeout =>
 			nowPlayingState = @_nowPlayingState
+
 			songChanged = nowPlayingState.songId != initialNowPlayingState.songId
 			progressChanged = nowPlayingState.progress != initialNowPlayingState.progress
 			shouldPlayChanged = nowPlayingState.shouldPlay != initialNowPlayingState.shouldPlay
+
 			if songChanged or progressChanged or shouldPlayChanged
-				console.log 'Something is going, will join the party from the next song'
-				return
-			console.log 'Looks like nobody is playing, resetting'
+				return console.log('Song is playing, will join from the next song.')
+
+			console.log('Looks like no other device is playing, resetting.')
 			@resetNowPlaying()
 		, 5000
 
 	_onStateChanged: ->
-		# exit if we didn't get @_nowPlayingState yet
-		if not @_nowPlayingState
-			return
+		# Exit if we haven't establish @_nowPlayingState yet.
+		return if not @_nowPlayingState
 
-		# first time we got nowPlayingState schedule reset if needed
-		if not @_prevNowPlayingState
-			@resetIfNeeded()
+		# Reset if needed on the first time we establish @_nowPlayingState.
+		@resetIfNeeded() if not @_prevNowPlayingState
 
+		# Should we switch to the stopped state?
 		switchToStop = not @_nowPlayingState?.shouldPlay
-		if switchToStop
-			return @_eventsHub.emit('stop')
+		return @_eventsHub.emit('stop') if switchToStop
 
-		# don't do any playback until we get all data
-		if not @_playlistReceived
-			return
+		# Don't do any playback until we get all data.
+		return if not @_playlistReceived
 
-		switchToStart = @_prevNowPlayingState?.shouldPlay == false and @_nowPlayingState?.shouldPlay
-		if switchToStart
-			return @_eventsHub.emit('play_next')
+		# Should we switch to the started state?
+		switchToStart = @_prevNowPlayingState?.shouldPlay is false and @_nowPlayingState?.shouldPlay
+		return @_eventsHub.emit('play_next') if switchToStart
 
 		nobodyPlaying = not @_nowPlayingState?.songId and @_nowPlayingState?.shouldPlay
-		if nobodyPlaying
-			return @_eventsHub.emit('play_next')
+		return @_eventsHub.emit('play_next') if nobodyPlaying
 
 		songEnded = @_prevNowPlayingState?.songId and not @_nowPlayingState?.songId
 		if songEnded and @_nowPlayingState?.shouldPlay
@@ -90,7 +85,6 @@ module.exports = class Playlist
 		newSong = not @_prevNowPlayingState?.songId and @_nowPlayingState?.songId
 		if newSong and @_nowPlayingState?.shouldPlay
 			return @_eventsHub.emit('play')
-
 
 	_onPlaylistChanged: (snapshot) ->
 		@_playlistReceived = true
@@ -102,12 +96,12 @@ module.exports = class Playlist
 		@_nowPlayingState = snapshot.val()
 		@_onStateChanged()
 
-	# play functions
+	# Playback methods.
 
 	trackProgress: ->
 		playStart = @_nowPlayingState?.playStart
-		if not playStart
-			return
+		return if not playStart
+
 		now = currentTimeSync()
 		progress = Math.floor((now - playStart) / 1000)
 		@_nowPlayingRef.child('progress').set(progress)
@@ -122,10 +116,8 @@ module.exports = class Playlist
 		songRef.child('completed').set(true)
 		@_cleanPlayer()
 		@_nowPlayingRef.transaction (currentVal) ->
-			if currentVal?.songId != songId
-				return
-			if not currentVal?.shouldPlay
-				return
+			return if currentVal?.songId != songId or not currentVal?.shouldPlay
+
 			return {
 				songId: null
 				shouldPlay: true
@@ -138,48 +130,55 @@ module.exports = class Playlist
 			@trackProgress()
 		, 500
 
-	lookupSong: (songId, cb) ->
+	lookupSong: (songId, callback) ->
 		song = @_playlist[songId]
-		if song.externalId
-			return cb(null, song)
+
+		# Return if we've already obtained a stream URL.
+		return callback(null, song) if song.externalId
+
 		songRef = @_playlistRef.child(songId)
 		origTitle = song.title
-		externalHelper.lookupSong origTitle, (err, info) =>
+		grooveshark.lookupSong origTitle, (err, info) =>
 			if err
-				console.log "Get info error", err
+				console.log 'Get info error', err
 				@_cleanPlayer()
 				songRef.update
-					title: "Song not found"
+					title: 'Song not found'
 					origTitle: origTitle
 					completed: true
 					externalId: null
-				# broadcast that we should switch to the next song
+
+				# Broadcast that we should switch to the next song.
 				@_nowPlayingRef.transaction (currentVal) ->
-					if currentVal?.songId != songId
-						return
+					return if currentVal?.songId != songId
+
 					return shouldPlay: true
-				return cb err
-			cb(null, info)
+
+				return callback(err)
+
+			callback(null, info)
 			songRef.update
 				title: info.title
 				origTitle: origTitle
 				externalId: info.externalId
 
-	getSongStream: (externalId, cb) ->
-		externalHelper.getStreamingUrl externalId, (err, streamUrl) ->
-			return cb(err) if err
-			request = http.get(streamUrl) # Getting stream data
+	getSongStream: (externalId, callback) ->
+		grooveshark.getStreamingUrl externalId, (err, streamUrl) ->
+			return callback(err) if err
+
+			request = http.get(streamUrl)
 			request.on 'response', (stream) ->
-				cb(null, { stream, request })
-			request.on 'error', cb
+				callback(null, { stream, request })
+			request.on('error', callback)
 
 	onPlay: ->
-		console.log 'play'
+		console.log('play')
+
 		if not @_nowPlayingState?.shouldPlay
 			console.log('shouldPlay == false')
 			return
 
-		if @_player # already playing
+		if @_player
 			console.log('Already playing')
 			return
 
@@ -194,7 +193,7 @@ module.exports = class Playlist
 			console.log('Already completed, skip')
 			return
 
-		console.log("Got song to play:", song)
+		console.log('Got song to play:', song)
 		@_player = new Player()
 		@_player.setTitle(song.title)
 		@_player.on 'end', =>
@@ -202,11 +201,11 @@ module.exports = class Playlist
 
 		doPlay = @doPlay.bind(@)
 		async.auto
-			songData: (cb) =>
-				@lookupSong(songId, cb)
-			stream: ['songData', (cb, results) =>
+			songData: (callback) =>
+				@lookupSong(songId, callback)
+			stream: ['songData', (callback, results) =>
 				info = results.songData
-				@getSongStream(info.externalId, cb)
+				@getSongStream(info.externalId, callback)
 			]
 		, (err, results) =>
 			if err
@@ -228,17 +227,20 @@ module.exports = class Playlist
 
 	onPlayNext: ->
 		console.log('play_next')
-		if not @_nowPlayingState?.shouldPlay
-			return
+
+		return if not @_nowPlayingState?.shouldPlay
+
 		nextSongId = null
 		for id, song of @_playlist
 			if not song.completed
 				nextSongId = id
 				break
-		if not nextSongId
-			return
+
+		return if not nextSongId
+
 		now = currentTimeSync()
-		playStart = now + GRACE
+		playStart = now + grace #ms
+
 		@_nowPlayingRef.transaction (currentVal) ->
 			if currentVal?.songId
 				return
@@ -252,7 +254,8 @@ module.exports = class Playlist
 
 	onStop: ->
 		console.log('stop')
+
 		@_cleanPlayer()
+
 		songId = @_nowPlayingState?.songId
-		if songId
-			@onSongEnded(songId)
+		@onSongEnded(songId) if songId

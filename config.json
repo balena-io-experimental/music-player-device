@@ -1,5 +1,5 @@
 {
-	"FIREBASE_URL": "https://vocalist.firebaseio.com",
-	"GRACE": 10000,
-	"format": null
+	"firebaseUrl": "https://vocalist.firebaseio.com",
+	"grace": 10000,
+	"maxSkew": 200
 }

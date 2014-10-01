@@ -1,9 +1,8 @@
-{ FIREBASE_URL } = require('./config')
-Playlist = require('./playlist')
-{ startSntp } = require('./util')
+{ firebaseUrl } = require './config'
+Playlist = require './playlist'
+{ startSntp } = require './util'
 
-# run
 startSntp ->
-	new Playlist(FIREBASE_URL)
+	new Playlist(firebaseUrl)
 
-	console.log '\n\n\nRunning'
+	console.log 'Running'

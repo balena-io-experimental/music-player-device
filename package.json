@@ -1,6 +1,6 @@
 {
   "name": "music-player",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "dependencies": {
     "async": "^0.6.2",
     "coffee-script": "^1.7.1",
@@ -16,7 +16,6 @@
     "through": "^2.3.4",
     "through2": "^0.4.1"
   },
-  "devDependencies": {},
   "scripts": {
     "start": "coffee server.coffee",
     "preinstall": "bash deps.sh"

@@ -1,17 +1,18 @@
-Lame = require('lame')
-Speaker = require('speaker')
-{ EventEmitter2 } = require('eventemitter2')
+Lame = require 'lame'
+Speaker = require 'speaker'
+{ EventEmitter2 } = require 'eventemitter2'
 
-{ currentTimeSync, timeKeeper } = require('./util')
-config = require('./config')
+{ currentTimeSync, timeKeeper } = require './util'
+config = require './config'
 
-class Player extends EventEmitter2
+module.exports = class extends EventEmitter2
 	constructor: ->
-		super()
+		super
+
 		@decoder = new Lame.Decoder()
+		@ready = false
 		@speaker = null
 		@timeKeeper = null
-		@ready = false
 
 	setTitle: (@title) ->
 
@@ -19,26 +20,27 @@ class Player extends EventEmitter2
 		console.log("'#{@title}':", args...)
 
 	buffer: (songStream) ->
-		@log("Piping to decoder.")
+		@log('Piping to decoder.')
 		songStream.pipe(@decoder)
-		@log("Piped to decoder.")
+		@log('Piped to decoder.')
 
 		@decoder.on 'format', (format) =>
-			# Share with all components.
+			# Save format of current song.
+			# TODO: Expose as property and use that instead.
 			config.format = format
 
 			@speaker = new Speaker(format)
 			@speaker.on 'flush', =>
-				@log("Song finished.")
+				@log('Song finished.')
 				@playing = null
-				@log("Closing songStream.")
+				@log('Closing songStream.')
 				songStream?.unpipe()
 				songStream = null
-				@log("Closed songStream.")
-				@log("Closing decoder.")
+				@log('Closed songStream.')
+				@log('Closing decoder.')
 				@decoder?.unpipe()
 				@decoder = null
-				@log("Closed decoder.")
+				@log('Closed decoder.')
 				@emit('end')
 			@ready = true
 			@emit('ready')
@@ -50,12 +52,10 @@ class Player extends EventEmitter2
 		@emit('playing')
 
 	play: (startTime) ->
-		if startTime
-			@startTime = startTime
-		if not @startTime
-			@startTime = currentTimeSync()
+		@startTime = startTime ? currentTimeSync()
 		@timeKeeper = timeKeeper(@startTime)
 		@log('Playing')
+
 		if @ready
 			@_play()
 		else
@@ -63,6 +63,7 @@ class Player extends EventEmitter2
 
 	pause: ->
 		@log('Pausing')
+
 		@off('ready', @_play)
 		@decoder?.unpipe()
 		@emit('paused')
@@ -71,5 +72,3 @@ class Player extends EventEmitter2
 		@log('Stopping')
 		@pause()
 		@speaker?.end()
-
-module.exports = Player

@@ -1,66 +1,53 @@
-sntp = require('sntp')
-through = require('through')
-Throttle = require('throttle')
-stream = require('stream')
+sntp = require 'sntp'
+through = require 'through'
+Throttle = require 'throttle'
+stream = require 'stream'
 
-config = require('./config')
+config = require './config'
 
-module.exports.startSntp = (cb) ->
-	sntp.start(clockSyncRefresh: 5 * 60 * 1000, cb)
-
-module.exports.currentTime = (cb) ->
-	sntp.time (err, time) ->
-		if err
-			cb(null, Date.now())
-			console.error "SNTP Error", err
-			return
-
-		cb(null, Date.now() + time.t)
-
-module.exports.currentTimeSync = currentTimeSync = ->
+currentTimeSync = ->
 	sntp.now()
 
-module.exports.timeKeeper = ->
-	start = null
+module.exports = {
+	currentTimeSync
 
-	# State variables
-	actualBytes = 0
+	startSntp: (callback) ->
+		# Refresh clock sync every 5 minutes.
+		sntp.start(clockSyncRefresh: 5 * 60 * 1000, callback)
 
-	# The actual stream processing function
-	return through (chunk) ->
+	timeKeeper: ->
+		start = null
 
-		# Initialise start the at the first chunk of data
-		if start is null
-			start = currentTimeSync()
+		actualBytes = 0
 
-		now = currentTimeSync()
+		return through (chunk) ->
+			# Note: Javscript dates are expressed in *ms* since epoch.
+			now = currentTimeSync()
 
-		{ bitDepth, channels, sampleRate } = config.format
+			# Initialise start the at the first chunk of data.
+			start ?= now
 
-		byteMul = sampleRate * channels * (bitDepth / 8)
+			# Determine bytes of PCM data per ms of music.
+			{ bitDepth, channels, sampleRate } = config.format
+			bytesPerMs = sampleRate * channels * (bitDepth / 8) / 1000
 
-		# Maximum accepted deviation from ideal timing
-		EPSILON_MS = 200
-		EPSILON_BYTES = (EPSILON_MS / 1000) * byteMul
+			# Maximum accepted deviation from ideal timing (ms.)
+			{ maxSkew } = config
+			maxSkewBytes = bytesPerMs * maxSkew
 
-		# Derive the bytes that should have been processed if there was no time skew
+			# Determine how far off expectation the stream is.
+			idealBytes = (now - start) * bytesPerMs
+			diffBytes = actualBytes - idealBytes
+			diffBytes -= diffBytes % 4 # Buffer is 4-byte aligned.
 
-		# now, start are ms.
-		idealBytes = (now - start)/1000 * byteMul
-		diffBytes = actualBytes - idealBytes
+			if -maxSkewBytes < diffBytes < maxSkewBytes
+				correctedChunk = chunk
+			else
+				console.log('Maximum skew exceeded! Correcting.')
+				correctedChunk = new Buffer(chunk.length + diffBytes)
+				chunk.copy(correctedChunk)
 
-		actualBytes += chunk.length
-		#console.log('Time deviation:', (diffBytes / byteMul).toFixed(2) + 'ms')
+			actualBytes += chunk.length
 
-		# The buffer size should be a multiple of 4
-		diffBytes = diffBytes - (diffBytes % 4)
-
-		# Only correct the stream if we're out of the EPSILON region.
-		if -EPSILON_BYTES < diffBytes < EPSILON_BYTES
-			correctedChunk = chunk
-		else
-			console.log('Epsilon exceeded! correcting')
-			correctedChunk = new Buffer(chunk.length + diffBytes)
-			chunk.copy(correctedChunk)
-
-		@emit('data', correctedChunk)
+			@emit('data', correctedChunk)
+}
