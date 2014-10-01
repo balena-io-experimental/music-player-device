@@ -13,7 +13,6 @@ module.exports = class extends EventEmitter2
 		@decoder = new Lame.Decoder()
 		@ready = false
 		@speaker = null
-		@skewCorrection = null
 
 	setTitle: (@title) ->
 
@@ -44,13 +43,12 @@ module.exports = class extends EventEmitter2
 
 	_play:	->
 		@decoder
-			.pipe(@skewCorrection)
+			.pipe(skewCorrection(@startTime, @format))
 			.pipe(@speaker)
 		@emit('playing')
 
 	play: (startTime) ->
 		@startTime = startTime ? currentTimeSync()
-		@skewCorrection = skewCorrection(@startTime, @format)
 		@log('Playing')
 
 		if @ready
