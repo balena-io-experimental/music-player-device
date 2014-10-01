@@ -1,7 +1,5 @@
 sntp = require 'sntp'
 through = require 'through'
-Throttle = require 'throttle'
-stream = require 'stream'
 
 config = require './config'
 

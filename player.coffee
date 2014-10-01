@@ -1,9 +1,9 @@
 Lame = require 'lame'
-Speaker = require 'speaker'
 { EventEmitter2 } = require 'eventemitter2'
+Speaker = require 'speaker'
 
-{ currentTimeSync, timeKeeper } = require './util'
 config = require './config'
+{ currentTimeSync, timeKeeper } = require './util'
 
 module.exports = class extends EventEmitter2
 	constructor: ->
