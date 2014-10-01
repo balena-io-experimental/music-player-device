@@ -174,24 +174,16 @@ module.exports = class Playlist
 	onPlay: ->
 		console.log('play')
 
-		if not @_nowPlayingState?.shouldPlay
-			console.log('shouldPlay == false')
-			return
-
-		if @_player
-			console.log('Already playing')
-			return
+		return console.log('!shouldPlay') if not @_nowPlayingState?.shouldPlay
+		return console.log('Already playing') if @_player
 
 		songId = @_nowPlayingState.songId
 		song = @_playlist?[songId]
 		if not song
-			console.log('Song not found, id:', songId)
 			@resetNowPlaying()
-			return
+			return console.log('Song not found, id:', songId)
 
-		if song.completed
-			console.log('Already completed, skip')
-			return
+		return console.log('Already completed, skip') if song.completed
 
 		console.log('Got song to play:', song)
 		@_player = new Player()
@@ -208,12 +200,9 @@ module.exports = class Playlist
 				@getSongStream(info.externalId, callback)
 			]
 		, (err, results) =>
-			if err
-				console.error(err)
-				return
-			if not @_player
-				console.log('Player disappeared?')
-				return
+			return console.error(err) if err
+			return console.log('Player disappeared?') if not @_player
+
 			@_player.setTitle(results.songData.title)
 			@_player.on 'end', ->
 				console.log('Aborting request')
@@ -242,10 +231,8 @@ module.exports = class Playlist
 		playStart = now + grace #ms
 
 		@_nowPlayingRef.transaction (currentVal) ->
-			if currentVal?.songId
-				return
-			if not currentVal?.shouldPlay
-				return
+			return if currentVal?.songId or not currentVal?.shouldPlay
+
 			return {
 				shouldPlay: true
 				songId: nextSongId
