@@ -189,7 +189,7 @@ module.exports = class Playlist
 
 		return log(lvl.release, 'Already completed, skipping.') if song.completed
 
-		log(lvl.release, 'Got song to play:', song)
+		log(lvl.release, "Playing '#{song?.title}'")
 		@_player = new Player()
 		@_player.setTitle(song.title)
 		@_player.on 'end', =>
@@ -207,7 +207,8 @@ module.exports = class Playlist
 			return log(lvl.error, err) if err
 			return log(lvl.error, 'Player object not found?!') if not @_player
 
-			@_player.setTitle(results.songData.title)
+			log(lvl.debug, "Returned song title: #{results.songData.title} ")
+
 			@_player.on 'end', ->
 				log(lvl.release, 'Aborting request.')
 				results.stream.request.abort()
