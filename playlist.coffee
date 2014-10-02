@@ -185,9 +185,9 @@ module.exports = class Playlist
 		song = @_playlist?[songId]
 		if not song
 			@resetNowPlaying()
-			return log(lvl.release, 'Song not found, id:', songId)
+			return log(lvl.error, 'Song not found, id:', songId)
 
-		return log(lvl.release, 'Already completed, skipping.') if song.completed
+		return log(lvl.error, 'Already completed, skipping.') if song.completed
 
 		@_player = new Player()
 		@_player.setTitle(song.title)
@@ -211,7 +211,7 @@ module.exports = class Playlist
 			log(lvl.debug, "Returned song title: #{results.songData.title} ")
 
 			@_player.on 'end', ->
-				log(lvl.release, 'Aborting request.')
+				log(lvl.debug, 'Aborting request.')
 				results.stream.request.abort()
 			@_player.buffer(results.stream.stream)
 			diff = @_nowPlayingState.playStart - currentTimeSync()
