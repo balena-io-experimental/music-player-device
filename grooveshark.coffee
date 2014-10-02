@@ -1,16 +1,16 @@
+config = require './config'
 stream = require 'grooveshark-streaming'
+{ log, logLevel: lvl } = require './util'
 
 # Searching for song_name on Grooveshark
 module.exports =
 	getData: (song, callback) ->
-		console.log('Getting info.')
-		# Getting SongID
 		stream.Tinysong.getSongInfo song, '', (err, info) ->
-			if err or not info # Not found
-				console.log('Not found.')
-				# Cannot return err because Groove shark has a bug and returns null.
+			if err or not info
+				log(lvl.error, 'Stream for', song, 'not found.')
+				# Sometimes Grooveshark erroneously reports no error but also no
+				# data.
 				return callback(err or true)
-			console.log('Got info', info)
 			callback null, {
 				artist: info.ArtistName
 				title: info.SongName
@@ -18,14 +18,14 @@ module.exports =
 			}
 
 	getStreamingUrl: (songId, callback) ->
-		console.log('Getting streamUrl.')
+		log(lvl.debug, 'Getting stream URL.')
 
 		stream.Grooveshark.getStreamingUrl songId, (err, streamUrl) ->
-			console.log("Got stream URL '#{streamUrl}.'")
+			log(lvl.debug, "Got stream URL '#{streamUrl}.'")
 
 			# Could not fetch streamUrl.
 			if err
-				console.error('Error getting stream url.', err)
+				log(lvl.error, err)
 				return callback(err)
 
 			callback(null, streamUrl)

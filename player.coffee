@@ -1,10 +1,11 @@
+_ = require 'lodash'
 Lame = require 'lame'
 { EventEmitter2 } = require 'eventemitter2'
 Speaker = require 'speaker'
 
 config = require './config'
 skewCorrection = require './skew-correction'
-{ currentTimeSync } = require './util'
+{ currentTimeSync, log, logLevel: lvl } = require './util'
 
 module.exports = class extends EventEmitter2
 	constructor: ->
@@ -16,27 +17,28 @@ module.exports = class extends EventEmitter2
 
 	setTitle: (@title) ->
 
-	log: (args...) ->
-		console.log("'#{@title}':", args...)
+	log: (logLevel, args...) ->
+		# Prefix all log messages with song title.
+		log(logLevel, @title, args...)
 
 	buffer: (songStream) ->
-		@log('Piping to decoder.')
+		@log(lvl.debug, 'Piping to decoder.')
 		songStream.pipe(@decoder)
-		@log('Piped to decoder.')
+		@log(lvl.debug, 'Piped to decoder.')
 
 		@decoder.on 'format', (@format) =>
 			@speaker = new Speaker(@format)
 			@speaker.on 'flush', =>
-				@log('Song finished.')
+				@log(lvl.release, 'Song finished.')
 				@playing = null
-				@log('Closing songStream.')
+				@log(lvl.debug, 'Closing songStream.')
 				songStream?.unpipe()
 				songStream = null
-				@log('Closed songStream.')
-				@log('Closing decoder.')
+				@log(lvl.debug, 'Closed songStream.')
+				@log(lvl.debug, 'Closing decoder.')
 				@decoder?.unpipe()
 				@decoder = null
-				@log('Closed decoder.')
+				@log(lvl.debug, 'Closed decoder.')
 				@emit('end')
 			@ready = true
 			@emit('ready')
@@ -49,7 +51,7 @@ module.exports = class extends EventEmitter2
 
 	play: (startTime) ->
 		@startTime = startTime ? currentTimeSync()
-		@log('Playing')
+		@log(lvl.release, 'Playing.')
 
 		if @ready
 			@_play()
@@ -57,13 +59,13 @@ module.exports = class extends EventEmitter2
 			@once('ready', @_play)
 
 	pause: ->
-		@log('Pausing')
+		@log(lvl.release, 'Pausing.')
 
 		@off('ready', @_play)
 		@decoder?.unpipe()
 		@emit('paused')
 
 	end: ->
-		@log('Stopping')
+		@log(lvl.release, 'Stopping.')
 		@pause()
 		@speaker?.end()

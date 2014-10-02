@@ -1,10 +1,10 @@
 config = require './config'
 Playlist = require './playlist'
-util = require './util'
+{ log, logLevel: lvl, readConfigEnvVars, startSntp } = require './util'
 
-util.readConfigEnvVars()
+readConfigEnvVars()
 
-util.startSntp ->
+startSntp ->
 	new Playlist(config.firebaseUrl)
 
-	console.log 'Running'
+	log(lvl.release, 'Running.')

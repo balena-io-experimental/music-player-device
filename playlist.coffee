@@ -6,10 +6,11 @@ Firebase = require 'firebase'
 config = require './config'
 grooveshark = require './grooveshark'
 Player = require './player'
-{ currentTimeSync } = require './util'
+{ currentTimeSync, log, logLevel: lvl } = require './util'
 
 module.exports = class Playlist
 	constructor: (firebaseUrl) ->
+
 		# State.
 		@_playlistReceived = false
 		@_playlist = null
@@ -51,9 +52,9 @@ module.exports = class Playlist
 			shouldPlayChanged = nowPlayingState.shouldPlay != initialNowPlayingState.shouldPlay
 
 			if songChanged or progressChanged or shouldPlayChanged
-				return console.log('Song is playing, will join from the next song.')
+				return log(lvl.release, 'Song is playing, will join from the next song.')
 
-			console.log('Looks like no other device is playing, resetting.')
+			log(lvl.release, 'No other devices playing, resetting.')
 			@resetNowPlaying()
 		, 5000
 
@@ -140,7 +141,7 @@ module.exports = class Playlist
 		origTitle = song.title
 		grooveshark.lookupSong origTitle, (err, info) =>
 			if err
-				console.log 'Get info error', err
+				log(lvl.error, err)
 				@_cleanPlayer()
 				songRef.update
 					title: 'Song not found'
@@ -172,20 +173,23 @@ module.exports = class Playlist
 			request.on('error', callback)
 
 	onPlay: ->
-		console.log('play')
+		log(lvl.release, 'Play.')
 
-		return console.log('!shouldPlay') if not @_nowPlayingState?.shouldPlay
-		return console.log('Already playing') if @_player
+		if not @_nowPlayingState?.shouldPlay
+			return log lvl.error,
+				"Attempting to play a track marked as shouldn't play."
+
+		return log(lvl.error, 'Already playing.') if @_player
 
 		songId = @_nowPlayingState.songId
 		song = @_playlist?[songId]
 		if not song
 			@resetNowPlaying()
-			return console.log('Song not found, id:', songId)
+			return log(lvl.release, 'Song not found, id:', songId)
 
-		return console.log('Already completed, skip') if song.completed
+		return log(lvl.release, 'Already completed, skipping.') if song.completed
 
-		console.log('Got song to play:', song)
+		log(lvl.release, 'Got song to play:', song)
 		@_player = new Player()
 		@_player.setTitle(song.title)
 		@_player.on 'end', =>
@@ -200,12 +204,12 @@ module.exports = class Playlist
 				@getSongStream(info.externalId, callback)
 			]
 		, (err, results) =>
-			return console.error(err) if err
-			return console.log('Player disappeared?') if not @_player
+			return log(lvl.error, err) if err
+			return log(lvl.error, 'Player object not found?!') if not @_player
 
 			@_player.setTitle(results.songData.title)
 			@_player.on 'end', ->
-				console.log('Aborting request')
+				log(lvl.release, 'Aborting request.')
 				results.stream.request.abort()
 			@_player.buffer(results.stream.stream)
 			diff = @_nowPlayingState.playStart - currentTimeSync()
@@ -215,7 +219,7 @@ module.exports = class Playlist
 				setTimeout(doPlay, diff)
 
 	onPlayNext: ->
-		console.log('play_next')
+		log(lvl.release, 'Play Next.')
 
 		return if not @_nowPlayingState?.shouldPlay
 
@@ -240,7 +244,7 @@ module.exports = class Playlist
 			}
 
 	onStop: ->
-		console.log('stop')
+		log(lvl.release, 'Stop.')
 
 		@_cleanPlayer()
 
