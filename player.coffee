@@ -5,7 +5,9 @@ Speaker = require 'speaker'
 
 config = require './config'
 skewCorrection = require './skew-correction'
-{ currentTimeSync, log, logLevel: lvl } = require './util'
+util = require './util'
+
+{ currentTimeSync, log, logLevel: lvl } = util
 
 module.exports = class extends EventEmitter2
 	constructor: ->
@@ -15,7 +17,8 @@ module.exports = class extends EventEmitter2
 		@ready = false
 		@speaker = null
 
-	setTitle: (@title) ->
+	setTitle: (title) ->
+		@title = util.capitalise(title)
 
 	log: (logLevel, args...) ->
 		# Prefix all log messages with song title.

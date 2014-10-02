@@ -28,6 +28,13 @@ log = (logLevel, args...) ->
 	return print(args...)
 
 module.exports = {
+	capitalise: (str) ->
+		return str if typeof str isnt 'string'
+
+		return (' ' + str)
+			.replace(/\s+([a-z])/g, (chr) -> chr.toUpperCase())
+			.trimLeft()
+
 	currentTimeSync: sntp.now
 
 	log

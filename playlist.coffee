@@ -189,9 +189,10 @@ module.exports = class Playlist
 
 		return log(lvl.release, 'Already completed, skipping.') if song.completed
 
-		log(lvl.release, "Playing '#{song?.title}'")
 		@_player = new Player()
 		@_player.setTitle(song.title)
+		log(lvl.release, "Playing '#{@_player.title}'.")
+
 		@_player.on 'end', =>
 			@onSongEnded(songId)
 
