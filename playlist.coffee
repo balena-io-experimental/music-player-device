@@ -240,14 +240,16 @@ module.exports = class Playlist
 
 		now = currentTimeSync()
 		playStart = now + config.grace #ms
+		log(lvl.debug, 'now, now + grace =', now, playStart)
 
 		@_nowPlayingRef.transaction (currentVal) ->
 			return if currentVal?.songId or not currentVal?.shouldPlay
 
-			nextVal =
+			nextVal = {
 				shouldPlay: true
 				songId: nextSongId
-				playStart: playStart
+				playStart
+			}
 			log(lvl.debug, 'Set Now Playing state to:', nextVal)
 
 			return nextVal
