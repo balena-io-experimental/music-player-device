@@ -52,8 +52,7 @@ module.exports = class Playlist
 			progressChanged = nowPlayingState.progress != initialNowPlayingState.progress
 			shouldPlayChanged = nowPlayingState.shouldPlay != initialNowPlayingState.shouldPlay
 
-			if songChanged or progressChanged or shouldPlayChanged
-				return log(lvl.release, 'Song is playing, will join from the next song.')
+			return if songChanged or progressChanged or shouldPlayChanged
 
 			log(lvl.release, 'No other devices playing, resetting.')
 			@resetNowPlaying()
