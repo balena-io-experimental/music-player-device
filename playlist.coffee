@@ -1,3 +1,4 @@
+_ = require 'lodash'
 async = require 'async'
 { EventEmitter2 } = require 'eventemitter2'
 http = require 'http'
@@ -95,7 +96,9 @@ module.exports = class Playlist
 	_onNowPlayingChanged: (snapshot) ->
 		@_prevNowPlayingState = @_nowPlayingState
 		@_nowPlayingState = snapshot.val()
-		log(lvl.debug, 'Now Playing State changed:', @_nowPlayingState)
+
+		if config.debugMode and !_.isEqual(@_prevNowPlayingState, @_nowPlayingState)
+			log(lvl.debug, 'Now Playing State changed:', @_nowPlayingState)
 
 		@_onStateChanged()
 
