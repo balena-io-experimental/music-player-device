@@ -95,7 +95,7 @@ module.exports = class Playlist
 	_onNowPlayingChanged: (snapshot) ->
 		@_prevNowPlayingState = @_nowPlayingState
 		@_nowPlayingState = snapshot.val()
-		log(lvl.debug, 'Now Playing State Changed:', @_nowPlayingState)
+		log(lvl.debug, 'Now Playing State changed:', @_nowPlayingState)
 
 		@_onStateChanged()
 

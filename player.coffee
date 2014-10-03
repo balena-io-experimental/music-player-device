@@ -47,6 +47,9 @@ module.exports = class extends EventEmitter2
 			@emit('ready')
 
 	_play:	->
+		@log(lvl.debug, 'Playing with Start Time = ', @startTime)
+		@log(lvl.debug, 'Format = ', @format)
+
 		@decoder
 			.pipe(skewCorrection(@startTime, @format))
 			.pipe(@speaker)
