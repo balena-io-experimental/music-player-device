@@ -4,6 +4,6 @@
 	"firebaseUrl": "https://vocalist.firebaseio.com",
 	"grace": 2000,
 	"maxSkew": 200,
-	"minSkewCorrectionPeriod": 5000,
+	"minSkewCorrectionPeriod": 30000,
 	"setupGrace": 200
 }
