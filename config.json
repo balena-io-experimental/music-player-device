@@ -3,7 +3,7 @@
 	"debugMode": false,
 	"firebaseUrl": "https://vocalist.firebaseio.com",
 	"grace": 2000,
-	"maxSkew": 200,
+	"maxSkew": 50,
 	"minSkewCorrectionPeriod": 30000,
 	"setupGrace": 200
 }
