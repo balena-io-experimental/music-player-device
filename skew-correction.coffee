@@ -6,6 +6,7 @@ config = require './config'
 module.exports = (start, format) ->
 	actualBytes = 0
 	lastCorrection = 0
+	lastChunkCorrected = false
 
 	return through (chunk) ->
 		# Note: Javscript dates are expressed in *ms* since epoch.
@@ -13,7 +14,10 @@ module.exports = (start, format) ->
 
 		{ maxSkew, debugMode } = config
 
-		emit = (data) => @emit('data', data)
+		emit = (corrected, data) =>
+			lastChunkCorrected = corrected
+			lastCorrection = now if corrected
+			@emit('data', data)
 
 		# Determine bytes of PCM data per ms of music.
 		{ bitDepth, channels, sampleRate } = format
@@ -35,7 +39,7 @@ module.exports = (start, format) ->
 		# piped out as we may remove or add data to output below.
 		actualBytes += chunk.length
 
-		return emit(chunk) if -maxSkewBytes < diffBytes < maxSkewBytes
+		return emit(false, chunk) if -maxSkewBytes < diffBytes < maxSkewBytes
 
 		# Skew detected.
 
@@ -43,8 +47,15 @@ module.exports = (start, format) ->
 
 		# Debounce skew corrections to avoid playback choppiness.
 		sinceLastCorrection = now - lastCorrection
-		return emit(chunk) if sinceLastCorrection < config.minSkewCorrectionPeriod
-		lastCorrection = now
+
+		# If last chunk was corrected we shouldn't 'debounce' in order to allow
+	    # for corrections that cannot be performed in a single chunk.
+		if !lastChunkCorrected and sinceLastCorrection < config.minSkewCorrectionPeriod
+			return emit(false, chunk)
+
+		log(lvl.debug, 'Correcting skew.')
+		log(lvl.debug, "Last correction #{sinceLastCorrection}ms ago",
+			"(#{config.minSkewCorrectionPeriod}ms minimum period.)")
 
 		# We need to take different action depending on whether we're behind
 		# (underrun) or ahead (overrun) of the expected playing time.
@@ -64,7 +75,10 @@ module.exports = (start, format) ->
 		# chunk.length + diffBytes will be <= 0. This results in a 0-size buffer
 		# and we can quit early.
 		correctedChunk = new Buffer(chunk.length + diffBytes)
-		return emit(correctedChunk) if correctedChunk.length == 0
+		length = correctedChunk.length
+		log(lvl.debug, 'New buffer size:', length)
+
+		return emit(true, correctedChunk) if length == 0
 
 		if diffBytes < 0
 			# Underrun.
@@ -81,4 +95,4 @@ module.exports = (start, format) ->
 			# of buffer to avoid undefined (+ often horrible) sound.
 			correctedChunk.fill(0, chunk.length)
 
-		emit(correctedChunk)
+		emit(true, correctedChunk)
