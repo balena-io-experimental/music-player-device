@@ -224,7 +224,13 @@ module.exports = class Playlist
 				log(lvl.debug, 'Aborting request.')
 				results.stream.request.abort()
 			@_player.buffer(results.stream.stream)
+
 			diff = @_nowPlayingState.playStart - currentTimeSync()
+
+			# Provide some 'grace' time to allow playback to be set up so we're
+	        # not behind immediately.
+			diff -= config.setupGrace
+
 			if diff <= 0
 				setImmediate(doPlay)
 			else
