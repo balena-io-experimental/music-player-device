@@ -1,4 +1,5 @@
 {
+	"clockSyncRefresh": 1000,
 	"debugMode": false,
 	"firebaseUrl": "https://vocalist.firebaseio.com",
 	"grace": 2000,

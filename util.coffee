@@ -52,5 +52,5 @@ module.exports = {
 
 	startSntp: (callback) ->
 		# Refresh clock sync every 5 minutes.
-		sntp.start(clockSyncRefresh: 5 * 60 * 1000, callback)
+		sntp.start(clockSyncRefresh: config.clockSyncRefresh, callback)
 }
