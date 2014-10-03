@@ -97,8 +97,13 @@ module.exports = class Playlist
 		@_prevNowPlayingState = @_nowPlayingState
 		@_nowPlayingState = snapshot.val()
 
-		if config.debugMode and !_.isEqual(@_prevNowPlayingState, @_nowPlayingState)
-			log(lvl.debug, 'Now Playing State changed:', @_nowPlayingState)
+		if config.debugMode
+			# Logging progress just produces noise.
+			prev = _.omit(@_prevNowPlayingState, 'progress')
+			curr = _.omit(@_nowPlayingState, 'progress')
+
+			if !_.isEqual(prev, curr)
+				log(lvl.debug, 'Now Playing State changed:', @_nowPlayingState)
 
 		@_onStateChanged()
 
