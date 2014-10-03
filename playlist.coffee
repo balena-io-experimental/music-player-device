@@ -189,7 +189,7 @@ module.exports = class Playlist
 			return log lvl.error,
 				"Attempting to play a track marked as shouldn't play."
 
-		return log(lvl.error, 'Already playing.') if @_player
+		return log(lvl.debug, 'Already playing.') if @_player
 
 		songId = @_nowPlayingState.songId
 		song = @_playlist?[songId]
@@ -216,7 +216,7 @@ module.exports = class Playlist
 			]
 		, (err, results) =>
 			return log(lvl.error, err) if err
-			return log(lvl.error, 'Player object not found?!') if not @_player
+			return log(lvl.debug, 'Player object not found?!') if not @_player
 
 			log(lvl.debug, "Returned song title: #{results.songData.title} ")
 
