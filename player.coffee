@@ -48,8 +48,8 @@ module.exports = class extends EventEmitter2
 
 	_play:	->
 		if config.debugMode
-			@log(lvl.debug, 'Playing with Start Time, Current Time',
-				@startTime, currentTimeSync())
+			@log(lvl.debug, 'Start Time, now - start =',
+				@startTime, currentTimeSync() - @startTime)
 		@log(lvl.debug, 'Format = ', @format)
 
 		@decoder
