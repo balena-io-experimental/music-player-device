@@ -5,6 +5,7 @@ config = require './config'
 
 module.exports = (start, format) ->
 	actualBytes = 0
+	lastCorrection = 0
 
 	return through (chunk) ->
 		# Note: Javscript dates are expressed in *ms* since epoch.
@@ -39,6 +40,11 @@ module.exports = (start, format) ->
 		# Skew detected.
 
 		log(lvl.debug, "Exceeds maximum skew of #{maxSkewBytes} (#{maxSkew}ms.)")
+
+		# Debounce skew corrections to avoid playback choppiness.
+		sinceLastCorrection = now - lastCorrection
+		return emit(chunk) if sinceLastCorrection < config.minSkewCorrectionPeriod
+		lastCorrection = now
 
 		# We need to take different action depending on whether we're behind
 		# (underrun) or ahead (overrun) of the expected playing time.

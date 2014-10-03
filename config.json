@@ -1,7 +1,8 @@
 {
 	"debugMode": false,
 	"firebaseUrl": "https://vocalist.firebaseio.com",
-	"grace": 1000,
+	"grace": 2000,
 	"maxSkew": 200,
+	"minSkewCorrectionPeriod": 5000,
 	"setupGrace": 200
 }
