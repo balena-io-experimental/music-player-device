@@ -239,11 +239,13 @@ module.exports = class Playlist
 		@_nowPlayingRef.transaction (currentVal) ->
 			return if currentVal?.songId or not currentVal?.shouldPlay
 
-			return {
+			nextVal =
 				shouldPlay: true
 				songId: nextSongId
 				playStart: playStart
-			}
+			log(lvl.debug, 'Set Now Playing state to:', nextVal)
+
+			return nextVal
 
 	onStop: ->
 		log(lvl.release, 'Stop.')
