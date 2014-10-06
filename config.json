@@ -1,9 +1,9 @@
 {
-	"clockSyncRefresh": 1000,
+	"clockSyncRefresh": 30000,
 	"debugMode": false,
 	"firebaseUrl": "https://vocalist.firebaseio.com",
 	"grace": 2000,
-	"maxSkew": 50,
-	"minSkewCorrectionPeriod": 30000,
-	"setupGrace": 200
+	"maxSkew": 150,
+	"minSkewCorrectionPeriod": 10000,
+	"setupGrace": 500
 }
