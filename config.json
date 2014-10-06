@@ -1,5 +1,5 @@
 {
-	"clockSyncRefresh": 30000,
+	"clockSyncRefresh": 3600000,
 	"debugMode": false,
 	"firebaseUrl": "https://vocalist.firebaseio.com",
 	"grace": 2000,
