@@ -49,7 +49,7 @@ module.exports = (start, format) ->
 		sinceLastCorrection = now - lastCorrection
 
 		# If last chunk was corrected we shouldn't 'debounce' in order to allow
-	    # for corrections that cannot be performed in a single chunk.
+		# for corrections that cannot be performed in a single chunk.
 		if !lastChunkCorrected and sinceLastCorrection < config.minSkewCorrectionPeriod
 			return emit(false, chunk)
 
