@@ -34,6 +34,8 @@ module.exports = (start, format) ->
 		if debugMode
 			diffMs = diffBytes / bytesPerMs
 			log(lvl.debug, "Delta: #{diffBytes} (#{diffMs.toFixed(2)}ms.)")
+			checkMs = currentTimeSync() - now
+			log(lvl.debug, "Skew check took #{checkMs}ms.")
 
 		# Note that we count actual bytes *of data processed* not actual bytes
 		# piped out as we may remove or add data to output below.
@@ -96,3 +98,7 @@ module.exports = (start, format) ->
 			correctedChunk.fill(0, chunk.length)
 
 		emit(true, correctedChunk)
+
+		if debugMode
+			correctMs = currentTimeSync() - checkMs - now
+			log(lvl.debug, "Skew correction took #{correctMs}ms.")
