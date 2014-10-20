@@ -1,5 +1,6 @@
 _ = require 'lodash'
-sntp = require 'sntp'
+
+{ exec } = require 'child_process'
 
 config = require './config'
 
@@ -35,7 +36,7 @@ module.exports = {
 			.replace(/\s+([a-z])/g, (chr) -> chr.toUpperCase())
 			.trimLeft()
 
-	currentTimeSync: sntp.now
+	currentTimeSync: Date.now
 
 	log
 
@@ -50,7 +51,12 @@ module.exports = {
 
 		log(lvl.debug, 'Configuration:', config)
 
-	startSntp: (callback) ->
-		# Refresh clock sync every 5 minutes.
-		sntp.start(clockSyncRefresh: config.clockSyncRefresh, callback)
+	updateNtp: (callback) ->
+		exec "ntpdate #{config.ntpServer}", (err, stdout, stderr) ->
+			log(lvl.release, 'ntp server error:', err) if err?
+			log(lvl.debug, 'ntpdate', stdout, stderr)
+
+			# Ignore errors, we don't want to disrupt playback *altogether*
+			# because NTP failed.
+			callback()
 }

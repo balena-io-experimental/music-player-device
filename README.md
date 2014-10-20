@@ -16,7 +16,7 @@ Configuration variables use [camelCase][camel] in the `config.json` for consiste
 
 ## Configuration Variables
 
-* Clock Sync Refresh Rate (ms) - `CLOCK_SYNC_REFRESH` (environment variable) - `clockSyncRefresh` (`config.json` key) - We use [SNTP][sntp] to synchronise the device's clock - this variable determines how often the clock should be updated.
+* Clock Sync Refresh Rate (ms) - `CLOCK_SYNC_REFRESH` (environment variable) - `clockSyncRefresh` (`config.json` key) - We use [NTP][ntp] to synchronise the device's clock - this variable determines how often the clock should be updated.
 * Debug Mode - `DEBUG_MODE` - `debugMode` - Determines whether debug output will be shown in logs.
 * Firebase URL - `FIREBASE_URL` - `firebaseUrl` - The [Firebase][firebase] backend to use.
 * Grace Period (ms) - `GRACE` - `grace` - The 'grace period' i.e. delay before starting to play to allow devices to synchronise.
@@ -24,10 +24,10 @@ Configuration variables use [camelCase][camel] in the `config.json` for consiste
 * Minimum Skew Correction Period (ms) - `MIN_SKEW_CORRECTION_PERIOD` - `minSkewCorrectionPeriod` - The minimum delay between skew corrections. Skew corrections result in 'dead air' while the playback stream is corrected, allowing this to recur frequently results in unpleasant 'stutter'. This allows this effect to be reduced at the cost of potential skew.
 * Setup Grace Period (ms) - `SETUP_GRACE` - `setupGrace` - The grace period before starting to play doesn't take into account the time taken to setup playback - this specifies the time given for initial playback to be setup, preventing the track from *starting* behind schedule.
 
-
 [resin]:http://resin.io
 [grooveshark]:http://grooveshark.com/
 [firebase]:https://www.firebase.com/
+[ntp]:http://en.wikipedia.org/wiki/Network_Time_Protocol
 
 [frontend-code]:https://github.com/resin-io/music-player-web-front-end
 [frontend-pages]:http://resin-io.github.io/music-player-web-front-end/#/

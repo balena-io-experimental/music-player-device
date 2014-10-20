@@ -7,7 +7,7 @@ Firebase = require 'firebase'
 config = require './config'
 grooveshark = require './grooveshark'
 Player = require './player'
-{ currentTimeSync, log, logLevel: lvl } = require './util'
+{ currentTimeSync, log, logLevel: lvl, updateNtp } = require './util'
 
 module.exports = class Playlist
 	constructor: (firebaseUrl) ->
@@ -224,16 +224,18 @@ module.exports = class Playlist
 				results.stream.request.abort()
 			@_player.buffer(results.stream.stream)
 
-			diff = @_nowPlayingState.playStart - currentTimeSync()
+			# Update clock on play request.
+			updateNtp =>
+				diff = @_nowPlayingState.playStart - currentTimeSync()
 
-			# Provide some 'grace' time to allow playback to be set up so we're
-	        # not behind immediately.
-			diff -= config.setupGrace
+				# Provide some 'grace' time to allow playback to be set up so we're
+				# not behind immediately.
+				diff -= config.setupGrace
 
-			if diff <= 0
-				setImmediate(doPlay)
-			else
-				setTimeout(doPlay, diff)
+				if diff <= 0
+					setImmediate(doPlay)
+				else
+					setTimeout(doPlay, diff)
 
 	onPlayNext: ->
 		log(lvl.release, 'Play Next.')
