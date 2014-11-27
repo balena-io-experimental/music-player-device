@@ -1,6 +1,6 @@
 {
 	"debugMode": false,
-	"firebaseUrl": "https://sonos-clone.firebaseio.com/",
+	"firebaseUrl": "https://vocalist.firebaseio.com",
 	"grace": 2000,
 	"maxSkew": 150,
 	"minSkewCorrectionPeriod": 10000,
