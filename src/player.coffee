@@ -1,13 +1,23 @@
 _ = require 'lodash'
 Lame = require 'lame'
 { EventEmitter2 } = require 'eventemitter2'
-Speaker = require 'speaker'
+{ spawn } = require 'child_process'
 
 config = require './config'
 skewCorrection = require './skew-correction'
 util = require './util'
 
 { currentTimeSync, log, logLevel: lvl } = util
+
+createAplay = (f) ->
+	spawn('aplay', [
+		'-f', "#{if f.signed then 'S' else 'U'}#{f.bitDepth}_LE"
+		'-c', f.channels
+		'-r', f.sampleRate
+		'--disable-resample'
+		'--disable-channels'
+		'--disable-format'
+	]).stdin
 
 module.exports = class extends EventEmitter2
 	constructor: ->
@@ -30,8 +40,8 @@ module.exports = class extends EventEmitter2
 		@log(lvl.debug, 'Piped to decoder.')
 
 		@decoder.on 'format', (@format) =>
-			@speaker = new Speaker(@format)
-			@speaker.on 'flush', =>
+			@speaker = createAplay(@format)
+			songStream.on 'end', =>
 				@log(lvl.release, 'Song finished.')
 				@playing = null
 				@log(lvl.debug, 'Closing songStream.')
