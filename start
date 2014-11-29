@@ -1,0 +1,7 @@
+#!/bin/bash
+
+export HOME=/sonos
+export PATH=$PATH:/app/vendor/node/bin
+
+cd /sonos/src
+node index.js
