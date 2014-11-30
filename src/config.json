@@ -4,6 +4,6 @@
 	"grace": 2000,
 	"maxSkew": 150,
 	"minSkewCorrectionPeriod": 10000,
-	"ntpServer": "stratum2.ord2.publicntp.net",
+	"ntpServer": "pool.ntp.org",
 	"setupGrace": 500
 }
