@@ -1,30 +1,34 @@
 through = require 'through'
 
 config = require './config'
-{ currentTimeSync, log, logLevel: lvl } = require './util'
+{log, logLevel: lvl } = require './util'
 
 module.exports = (start, format) ->
 	actualBytes = 0
+	idealBytes = 0
 	lastCorrection = 0
 	lastChunkCorrected = false
 
+	{ maxSkew, debugMode } = config
+
+	# Determine bytes of PCM data per ms of music.
+	{ bitDepth, channels, sampleRate } = format
+	bytesPerMs = sampleRate * channels * (bitDepth / 8) / 1000
+
+	# Maximum accepted deviation from ideal timing (ms.)
+	maxSkewBytes = bytesPerMs * maxSkew
+	console.log("Bytes per ms", bytesPerMs, "MaxSkewBytes", maxSkewBytes)
+
 	return through (chunk) ->
 		# Note: Javscript dates are expressed in *ms* since epoch.
-		now = currentTimeSync()
-
-		{ maxSkew, debugMode } = config
+		console.log()
+		now = Date.now()
 
 		emit = (corrected, data) =>
 			lastChunkCorrected = corrected
 			lastCorrection = now if corrected
+			console.log("ActualBytes:", actualBytes, "IdealBytes:", idealBytes)
 			@emit('data', data)
-
-		# Determine bytes of PCM data per ms of music.
-		{ bitDepth, channels, sampleRate } = format
-		bytesPerMs = sampleRate * channels * (bitDepth / 8) / 1000
-
-		# Maximum accepted deviation from ideal timing (ms.)
-		maxSkewBytes = bytesPerMs * maxSkew
 
 		# Determine how far off expectation the stream is.
 		idealBytes = (now - start) * bytesPerMs
@@ -34,7 +38,7 @@ module.exports = (start, format) ->
 		if debugMode
 			diffMs = diffBytes / bytesPerMs
 			log(lvl.debug, "Delta: #{diffBytes} (#{diffMs.toFixed(2)}ms.)")
-			checkMs = currentTimeSync() - now
+			checkMs = Date.now() - now
 			log(lvl.debug, "Skew check took #{checkMs}ms.")
 
 		# Note that we count actual bytes *of data processed* not actual bytes
@@ -52,8 +56,8 @@ module.exports = (start, format) ->
 
 		# If last chunk was corrected we shouldn't 'debounce' in order to allow
 		# for corrections that cannot be performed in a single chunk.
-		if !lastChunkCorrected and sinceLastCorrection < config.minSkewCorrectionPeriod
-			return emit(false, chunk)
+		# if lastChunkCorrected# and sinceLastCorrection < config.minSkewCorrectionPeriod
+		# 	return emit(false, chunk)
 
 		log(lvl.debug, 'Correcting skew.')
 		log(lvl.debug, "Last correction #{sinceLastCorrection}ms ago",
@@ -87,7 +91,7 @@ module.exports = (start, format) ->
 
 			# We need to skip the -diffBytes we are behind by. No need to zero
 			# as we fill the whole buffer with what remains.
-			chunk.copy(correctedChunk, 0, -diffBytes)
+			chunk.copy(correctedChunk)
 		else
 			# Overrun.
 
@@ -100,5 +104,5 @@ module.exports = (start, format) ->
 		emit(true, correctedChunk)
 
 		if debugMode
-			correctMs = currentTimeSync() - checkMs - now
+			correctMs = Date.now() - checkMs - now
 			log(lvl.debug, "Skew correction took #{correctMs}ms.")
