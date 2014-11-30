@@ -1,7 +1,7 @@
 _ = require 'lodash'
 Lame = require 'lame'
 { EventEmitter2 } = require 'eventemitter2'
-{ spawn } = require 'child_process'
+Speaker = require 'speaker'
 
 config = require './config'
 skewCorrection = require './skew-correction'
@@ -40,7 +40,7 @@ module.exports = class extends EventEmitter2
 		@log(lvl.debug, 'Piped to decoder.')
 
 		@decoder.on 'format', (@format) =>
-			@speaker = createAplay(@format)
+			@speaker = new Speaker(@format)
 			songStream.on 'end', =>
 				@log(lvl.release, 'Song finished.')
 				@playing = null
