@@ -5,7 +5,8 @@ stream = require 'grooveshark-streaming'
 # Searching for song_name on Grooveshark
 module.exports =
 	getData: (song, callback) ->
-		stream.Tinysong.getSongInfo song, '', (err, info) ->
+		[title, artist] = song.split(' - ')
+		stream.Tinysong.getSongInfo title, artist, (err, info) ->
 			if err or not info
 				log(lvl.error, 'Stream for', song, 'not found.')
 				# Sometimes Grooveshark erroneously reports no error but also no
