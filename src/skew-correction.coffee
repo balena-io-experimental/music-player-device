@@ -34,7 +34,7 @@ module.exports = (start, format) ->
 	return through (chunk) ->
 		# Determine how far off expectation the stream is.
 		idealBytes = (Date.now() - start) * bytesPerMs
-		diffBytes = smooth(actualBytes - idealBytes)
+		diffBytes = actualBytes - idealBytes
 		diffBytes -= diffBytes % 4 # Buffer is 4-byte aligned.
 
 		if debugMode
