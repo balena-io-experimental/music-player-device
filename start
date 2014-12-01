@@ -1,3 +1,12 @@
 #!/bin/bash
 
+# Sync the clock once
+ntpdate pool.ntp.org
+
+# Start background ntp syncing every 1min
+while true; do
+	sleep 60
+	ntpdate pool.ntp.org
+done &
+
 node /sonos/src/index.js
