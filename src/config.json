@@ -3,6 +3,7 @@
 	"firebaseUrl": "https://vocalist.firebaseio.com",
 	"grace": 2000,
 	"maxSkew": 100,
+	"smoothFactor": 0.8,
 	"minSkewCorrectionPeriod": 10000,
 	"ntpServer": "pool.ntp.org",
 	"setupGrace": 500
