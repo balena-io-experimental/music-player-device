@@ -41,7 +41,7 @@ module.exports = class extends EventEmitter2
 
 		@decoder.on 'format', (@format) =>
 			@speaker = new Speaker(@format)
-			songStream.on 'end', =>
+			@speaker.on 'flush', =>
 				@log(lvl.release, 'Song finished.')
 				@playing = null
 				@log(lvl.debug, 'Closing songStream.')
